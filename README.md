@@ -6,7 +6,8 @@ An idle game built on a 15,000-particle WebGL engine. All the game logic is
 - `shared/src/commonMain/kotlin/lumen/logic.kt` — the entire game as pure Kotlin
   (costs, production, shapes, prestige, shop, save serialization)
 - `shared/src/jsMain/kotlin/lumen/web.kt` — the WebGL particle engine + UI → Kotlin/JS
-- `shared/src/jvmMain/kotlin/lumen/sim.kt` — a greedy-bot balance simulator → Kotlin/JVM, run in CI
+- `sim/src/main/kotlin/lumen/sim.kt` — a greedy-bot balance simulator (Kotlin/JVM application,
+  consumed by CI as a Gradle `:sim:run` task)
 
 Play the CI build: **https://demchuckoleg-svg.github.io/funny-particle-shit/**
 

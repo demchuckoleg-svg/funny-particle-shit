@@ -27,17 +27,7 @@ jobs:
         run: gradle --no-daemon :shared:jsBrowserProductionWebpack
 
       - name: Compile and run balance simulation (Kotlin/JVM)
-        run: |
-          set -x
-          if gradle --no-daemon :shared:run; then
-            echo "sim ran via gradle :shared:run"
-          else
-            echo "gradle run unavailable; falling back to compile + direct java"
-            gradle --no-daemon :shared:compileKotlinJvm
-            STDLIB=$(find "$HOME/.gradle" -name "kotlin-stdlib-2.1.20.jar" | head -n 1)
-            echo "stdlib: $STDLIB"
-            java -cp "shared/build/classes/kotlin/jvm/main:$STDLIB" lumen.SimKt
-          fi
+        run: gradle --no-daemon :sim:run
 
       - name: Stage web bundle
         run: |

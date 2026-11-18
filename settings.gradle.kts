@@ -13,3 +13,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "flutterlight"
 include(":shared")
+include(":sim")

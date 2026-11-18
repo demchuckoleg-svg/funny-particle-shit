@@ -1,16 +1,11 @@
 plugins {
     kotlin("multiplatform")
-    application
 }
 
 kotlin {
-    jvm { withJava() }
+    jvm()
     js(IR) {
         browser { }
         binaries.executable()
     }
-}
-
-application {
-    mainClass.set("lumen.SimKt")
 }
