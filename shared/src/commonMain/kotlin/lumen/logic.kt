@@ -55,22 +55,28 @@ object Bal {
     const val LCAP = 300
 }
 
-/* shapes: corners ascending, then abstract topology */
-data class Shape(val key: String, val name: String, val sub: String, val mult: Double)
+/* shapes: corners ascending, then abstract topology.
+   reqMult: per-tier requirement tuning (late-game ramps reach equilibrium
+   income almost instantly, so raw mult-scaling collapses to seconds of
+   effort; these factors restore uniform gather pacing). */
+data class Shape(
+    val key: String, val name: String, val sub: String, val mult: Double,
+    val reqMult: Double = 1.0
+)
 
 val SHAPES = listOf(
     Shape("sphere", "FORMLESS SPHERE", "zero corners · pure potential", 1.0),
     Shape("tri", "TRIANGLE", "3 corners · STABILITY", 3.0),
     Shape("square", "SQUARE", "4 corners · FOUNDATION", 5.0),
-    Shape("pent", "PENTAGON", "5 corners · the golden ratio lives here", 8.0),
-    Shape("hex", "HEXAGON", "6 corners · nature's lattice", 13.0),
-    Shape("star", "STAR", "10 corners · RADIANCE", 25.0),
-    Shape("heart", "HEART", "abstract: the cusp · PULSE", 50.0),
-    Shape("galaxy", "SPIRAL GALAXY", "abstract: angular momentum", 120.0),
-    Shape("mobius", "MÖBIUS BAND", "abstract: one side · offline gains ×2", 350.0),
-    Shape("klein", "KLEIN BOTTLE", "abstract: contained infinity", 1000.0),
-    Shape("knot", "TORUS KNOT", "abstract: knottedness · BINDING", 4000.0),
-    Shape("tesseract", "TESSERACT", "abstract: the fourth dimension", 20000.0),
+    Shape("pent", "PENTAGON", "5 corners · the golden ratio lives here", 8.0, 4.0),
+    Shape("hex", "HEXAGON", "6 corners · nature's lattice", 13.0, 12.0),
+    Shape("star", "STAR", "10 corners · RADIANCE", 25.0, 30.0),
+    Shape("heart", "HEART", "abstract: the cusp · PULSE", 50.0, 56.0),
+    Shape("galaxy", "SPIRAL GALAXY", "abstract: angular momentum", 120.0, 85.0),
+    Shape("mobius", "MÖBIUS BAND", "abstract: one side · offline gains ×2", 350.0, 85.0),
+    Shape("klein", "KLEIN BOTTLE", "abstract: contained infinity", 1000.0, 115.0),
+    Shape("knot", "TORUS KNOT", "abstract: knottedness · BINDING", 4000.0, 115.0),
+    Shape("tesseract", "TESSERACT", "abstract: the fourth dimension", 20000.0, 115.0),
 )
 
 class GameState {
@@ -177,13 +183,14 @@ fun incomeOf(S: GameState, tNow: Double): Double =
      across the whole arc instead of collapsing to seconds late-game */
 fun reqFor(S: GameState): Double {
     val last = SHAPES.size - 1
+    val nextK = if (S.shapes >= last) last else S.shapes + 1
     val base = if (S.shapes >= last) {
         val over = S.shapes - last + 1
         Bal.reqBase * shapeMult(last).pow(Bal.reqExp) * 10.0.pow(over)
     } else {
         Bal.reqBase * shapeMult(S.shapes).pow(Bal.reqExp)
     }
-    return base * prismMult(S.ref)
+    return base * prismMult(S.ref) * SHAPES[nextK].reqMult
 }
 
 /* exact integer floor cube root (pow alone can miss exact cubes) */
