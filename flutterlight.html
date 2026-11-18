@@ -1,0 +1,1276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05040a">
+<title>FLUTTERLIGHT — a particle idle game</title>
+<!--
+  FLUTTERLIGHT — an idle game built on the particle engine.
+
+  PRODUCTION: particles make Light. Two upgrade axes bought with Light:
+    - DENSITY  (particle count)   cost = 10 * 1.11^n
+    - LIGHT LEVEL (efficiency)    cost = 50 * 2.2^n, each level x1.25
+
+  LAYERS:
+    1. Light (main currency, from particles)
+    2. Particles / Light Level (in-run upgrades)
+    3. SPECTRUM: 7 color bands x 5 levels, each level x1.10 all production;
+       your swarm's hue = the spectrum you've mastered
+    4. GATHER (prestige): reforge the swarm into the next SHAPE.
+       Shape order: corners ascending, then abstract topology:
+       sphere -> triangle(3) -> square(4) -> pentagon(5) -> hexagon(6)
+       -> star(10) -> heart(cusp) -> galaxy(spin) -> mobius(one side)
+       -> klein(containment) -> torus knot(binding) -> tesseract(dimension)
+       Each shape's bonus stacks with all previous.
+       Prisms (prestige currency) = cbrt(run earnings / 1e4)  [Cookie Clicker style]
+    5. PRISM SHOP: refraction, head start, afterglow (offline),
+       momentum, and autopilots (auto-buy).
+
+  Balance follows the classic conventions: exponential costs vs linear
+  production, bulk-buy/max via the geometric-series closed form,
+  cube-root prestige currency.
+
+  Saves to localStorage every 5 s. Tap the swarm to INSPIRE (+1s income).
+-->
+<style>
+  :root { --acc: hsl(190,90%,62%); --panel: rgba(8,7,16,.82); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; background:#05040a;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:#cfd6e4; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+
+  #vig { position:fixed; inset:0; pointer-events:none; z-index:1;
+    background: radial-gradient(ellipse at 50% 38%, transparent 45%, rgba(2,2,8,.66) 100%); }
+
+  /* hud */
+  #hud { position:fixed; top:0; left:0; right:0; padding:14px 16px 0; z-index:5;
+    display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; }
+  #hud .col { pointer-events:none; }
+  .lab { font-size:9px; letter-spacing:.3em; color:rgba(220,230,255,.45); }
+  #lightVal { font-size:clamp(22px,7vw,40px); font-weight:300; color:#f4f7ff; letter-spacing:.04em;
+    text-shadow:0 0 18px rgba(140,190,255,.35); }
+  #lightRate { font-size:11px; letter-spacing:.14em; color:var(--acc); margin-top:2px; }
+  #right { text-align:right; }
+  #prismVal { font-size:clamp(15px,4.6vw,22px); font-weight:300; color:#e8f2ff; }
+  #sysBtns { margin-top:8px; pointer-events:auto; }
+  .mini { display:inline-block; margin-left:6px; padding:4px 9px; font-size:9px; letter-spacing:.22em;
+    color:rgba(220,230,255,.55); border:1px solid rgba(255,255,255,.14); border-radius:999px;
+    background:transparent; font-family:inherit; }
+  .mini:active { background:rgba(255,255,255,.08); }
+
+  /* ceremony caption */
+  #cer { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:10px; z-index:6; pointer-events:none; opacity:0;
+    transition:opacity .5s ease; }
+  #cer.on { opacity:1; }
+  #cerName { font-size:clamp(22px,7.5vw,52px); font-weight:300; letter-spacing:.42em; text-indent:.42em;
+    color:#fff; text-shadow:0 0 34px rgba(160,210,255,.5); }
+  #cerSub { font-size:clamp(10px,2.6vw,14px); letter-spacing:.3em; color:var(--acc); }
+
+  /* bottom panel */
+  #tabs { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex;
+    background:rgba(6,5,12,.92); border-top:1px solid rgba(255,255,255,.07);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  #tabs button { flex:1; padding:12px 4px 10px; background:none; border:none; color:rgba(220,230,255,.5);
+    font-family:inherit; font-size:10px; letter-spacing:.24em; }
+  #tabs button.on { color:var(--acc); box-shadow:inset 0 -2px 0 var(--acc); }
+  #panel { position:fixed; left:0; right:0; bottom:41px; z-index:7; max-height:44vh; overflow-y:auto;
+    background:var(--panel); border-top:1px solid rgba(255,255,255,.06);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    padding:12px 14px 16px; touch-action:pan-y; display:none; }
+  #panel.on { display:block; }
+
+  .sect { margin-bottom:14px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 2px; border-bottom:1px solid rgba(255,255,255,.05); }
+  .row:last-child { border-bottom:none; }
+  .who { flex:1; min-width:0; }
+  .who b { display:block; font-weight:400; font-size:12px; letter-spacing:.18em; color:#f0f4ff; }
+  .who span { display:block; font-size:9px; letter-spacing:.12em; color:rgba(220,230,255,.45); margin-top:3px; }
+  .buy { flex:none; padding:8px 13px; border-radius:999px; border:1px solid var(--acc);
+    color:var(--acc); background:transparent; font-family:inherit; font-size:10px;
+    letter-spacing:.16em; white-space:nowrap; }
+  .buy:disabled { border-color:rgba(255,255,255,.12); color:rgba(220,230,255,.28); }
+  .buy:active:not(:disabled) { background:rgba(255,255,255,.09); }
+  .buy .cost { display:block; font-size:8px; letter-spacing:.08em; color:rgba(220,230,255,.55); margin-top:2px; }
+  .btnrow { display:flex; gap:6px; }
+
+  .bar { height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; margin:6px 0; }
+  .bar i { display:block; height:100%; background:var(--acc); box-shadow:0 0 10px var(--acc); }
+
+  .bigbtn { width:100%; padding:14px; margin-top:10px; border-radius:12px; border:1px solid var(--acc);
+    color:#fff; background:rgba(120,180,255,.12); font-family:inherit; font-size:12px; letter-spacing:.3em; }
+  .bigbtn:disabled { border-color:rgba(255,255,255,.1); color:rgba(220,230,255,.3); background:transparent; }
+  .bigbtn:active:not(:disabled) { background:rgba(120,180,255,.25); }
+
+  .pips { display:inline-flex; gap:3px; margin-left:6px; vertical-align:middle; }
+  .pips i { width:7px; height:7px; border-radius:50%; border:1px solid rgba(255,255,255,.25); }
+  .pips i.f { background:var(--acc); border-color:var(--acc); box-shadow:0 0 6px var(--acc); }
+
+  .mus { font-size:9px; letter-spacing:.1em; color:rgba(220,230,255,.4); margin:4px 0 12px; }
+  .musrow { display:flex; justify-content:space-between; padding:7px 2px; font-size:10px;
+    letter-spacing:.14em; border-bottom:1px solid rgba(255,255,255,.05); }
+  .musrow .got { color:var(--acc); }
+  .musrow .lock { color:rgba(220,230,255,.25); }
+
+  /* toasts */
+  #toasts { position:fixed; top:calc(14px + 6vh); left:50%; transform:translateX(-50%); z-index:20;
+    display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none; width:86vw; }
+  .toast { padding:8px 16px; border-radius:999px; background:rgba(10,9,20,.9);
+    border:1px solid var(--acc); color:#f0f5ff; font-size:10px; letter-spacing:.22em; text-align:center;
+    animation:toastIn .45s cubic-bezier(.2,.9,.25,1) both; }
+  .toast.bye { opacity:0; transition:opacity .8s ease; }
+  @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
+
+  #hint { position:fixed; right:14px; bottom:calc(52px + env(safe-area-inset-bottom,0px)); z-index:5;
+    font-size:9px; letter-spacing:.22em; color:rgba(220,230,255,.32); pointer-events:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+
+<div id="hud">
+  <div class="col">
+    <div class="lab">LIGHT</div>
+    <div id="lightVal">0</div>
+    <div id="lightRate">0 /s</div>
+  </div>
+  <div class="col" id="right">
+    <div class="lab">PRISMS</div>
+    <div id="prismVal">—</div>
+    <div id="sysBtns">
+      <button class="mini" id="saveBtn">SAVE</button>
+      <button class="mini" id="wipeBtn">WIPE</button>
+    </div>
+  </div>
+</div>
+
+<div id="cer"><div id="cerName"></div><div id="cerSub"></div></div>
+<div id="toasts"></div>
+
+<div id="panel">
+  <section id="tab-swarm" class="sect">
+    <div class="row">
+      <div class="who"><b>PARTICLES <span id="pCount">10</span></b><span id="pInfo"></span></div>
+      <div class="btnrow">
+        <button class="buy" id="bp1">+1<span class="cost" id="bp1c"></span></button>
+        <button class="buy" id="bp10">+10<span class="cost" id="bp10c"></span></button>
+        <button class="buy" id="bpMax">MAX<span class="cost" id="bpMaxc"></span></button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="who"><b>LIGHT LEVEL <span id="lCount">0</span></b><span id="lInfo"></span></div>
+      <div class="btnrow">
+        <button class="buy" id="bl1">+1<span class="cost" id="bl1c"></span></button>
+        <button class="buy" id="blMax">MAX<span class="cost" id="blMaxc"></span></button>
+      </div>
+    </div>
+    <div class="mus" id="prodBreak"></div>
+  </section>
+
+  <section id="tab-spectrum" class="sect" style="display:none">
+    <div class="mus">each band level: ×1.10 all production · completing a band grants a free light level · your hue = your spectrum</div>
+    <div id="bandRows"></div>
+  </section>
+
+  <section id="tab-gather" class="sect" style="display:none">
+    <div class="mus" id="curShape"></div>
+    <div class="row">
+      <div class="who"><b id="nextName">TRIANGLE</b><span id="nextSub"></span></div>
+      <div class="who" style="text-align:right"><span id="nextPrisms"></span></div>
+    </div>
+    <div class="bar"><i id="nextBar" style="width:0%"></i></div>
+    <div class="mus" id="nextReq"></div>
+    <button class="bigbtn" id="gatherBtn">GATHER</button>
+    <div class="mus" style="margin-top:14px" id="museum"></div>
+  </section>
+
+  <section id="tab-prism" class="sect" style="display:none">
+    <div class="mus" id="prismNote"></div>
+    <div id="shopRows"></div>
+  </section>
+</div>
+
+<div id="tabs">
+  <button data-t="swarm" class="on">SWARM</button>
+  <button data-t="spectrum">SPECTRUM</button>
+  <button data-t="gather">GATHER</button>
+  <button data-t="prism">PRISMS</button>
+</div>
+<div id="hint">TAP SWARM TO INSPIRE</div>
+
+<script>
+'use strict';
+
+/* =======================================================================
+   PURE GAME LOGIC (balance constants + formulas; also used by the tests)
+   ======================================================================= */
+/*__PURE__*/
+const BAL = {
+  P0: 10,                    // starting particles
+  perParticle: 1.0,          // light/s per particle at level 0
+  pCostBase: 10, pCostRate: 1.11,   // density cost = 10 * 1.11^P   (classic exponential)
+  lCostBase: 50, lCostRate: 2.2, lGain: 1.25,   // efficiency cost = 50 * 2.2^L
+  bandBase: 400, bandLvlRate: 2.5, bandGain: 1.10, bandMaxLvl: 5,
+  prismsDiv: 1e4,            // prisms = floor(cbrt(run / 1e4))   (Cookie Clicker cbrt prestige)
+  reqBase: 2e4,              // shape k requirement = reqBase * product(previous shape mults)
+  refBase: 5, refRate: 2, refGain: 1.25,     // refraction shop
+  headBase: 5, headRate: 2, headGain: 25,     // +25 starting particles per level
+  afterCosts: [10, 30, 90, 270], afterCaps: [2, 8, 24, Infinity],  // hours
+  baseAfterCap: 0.5,         // hours of offline production without the upgrade
+  autoCosts: { particles: 25, light: 75, spectrum: 225 },
+  momCosts: [50, 150, 450], momRate: 0.02, momCaps: [1, 3, 10],   // +2%/min, caps x1 x3 x10
+  PCAP: 6000,                // hard particle cap (keeps costs finite in doubles)
+  LCAP: 300,
+};
+
+/* shapes: corners ascending, then abstract topology */
+const SHAPES = [
+  { key:'sphere',    name:'FORMLESS SPHERE', sub:'zero corners · pure potential', mult:1 },
+  { key:'tri',       name:'TRIANGLE',        sub:'3 corners · STABILITY', mult:3 },
+  { key:'square',    name:'SQUARE',          sub:'4 corners · FOUNDATION', mult:5 },
+  { key:'pent',      name:'PENTAGON',       sub:'5 corners · home of the golden ratio', mult:8 },
+  { key:'hex',       name:'HEXAGON',         sub:'6 corners · nature’s lattice', mult:13 },
+  { key:'star',      name:'STAR',            sub:'10 corners · RADIANCE', mult:25 },
+  { key:'heart',     name:'HEART',           sub:'abstract: the cusp · PULSE', mult:50 },
+  { key:'galaxy',    name:'SPIRAL GALAXY',   sub:'abstract: angular momentum', mult:120 },
+  { key:'mobius',    name:'MÖBIUS BAND',     sub:'abstract: one side · offline gains ×2', mult:350, off2:true },
+  { key:'klein',     name:'KLEIN BOTTLE',    sub:'abstract: contained infinity', mult:1000 },
+  { key:'knot',      name:'TORUS KNOT',      sub:'abstract: knottedness · BINDING', mult:4000 },
+  { key:'tesseract', name:'TESSERACT',       sub:'abstract: the fourth dimension', mult:20000 },
+];
+
+function particleCost(P){ return BAL.pCostBase * Math.pow(BAL.pCostRate, P); }
+function lightCost(L){ return BAL.lCostBase * Math.pow(BAL.lCostRate, L); }
+function bandCost(b, l){ return BAL.bandBase * Math.pow(10, b) * Math.pow(BAL.bandLvlRate, l); }
+
+/* closed-form bulk buy (geometric series) and max-affordable (log form) */
+function bulkParticleCost(P, n){
+  const r = BAL.pCostRate, b = BAL.pCostBase;
+  return b * Math.pow(r, P) * (Math.pow(r, n) - 1) / (r - 1);
+}
+function maxParticlesAfford(P, light){
+  const r = BAL.pCostRate, b = BAL.pCostBase;
+  const c = light * (r - 1) / (b * Math.pow(r, P)) + 1;
+  if (c <= 1) return 0;
+  const n = Math.floor(Math.log(c) / Math.log(r));
+  return Math.max(0, Math.min(n, BAL.PCAP - P));
+}
+function maxLightAfford(L, light){
+  const r = BAL.lCostRate, b = BAL.lCostBase;
+  const c = light * (r - 1) / (b * Math.pow(r, L)) + 1;
+  if (c <= 1) return 0;
+  const n = Math.floor(Math.log(c) / Math.log(r));
+  return Math.max(0, Math.min(n, BAL.LCAP - L));
+}
+
+function shapeMult(shapesOwned){        // product of all unlocked shape bonuses
+  let m = 1;
+  for (let k = 1; k <= shapesOwned; k++) m *= SHAPES[k].mult;
+  return m;
+}
+function spectrumMult(bands){           // 1.10^(total band levels)
+  let s = 0;
+  for (let b = 0; b < 7; b++) s += bands[b];
+  return Math.pow(BAL.bandGain, s);
+}
+function prismMult(refLvl){ return Math.pow(BAL.refGain, refLvl); }
+function momentumMult(S, tNow){
+  if (S.mom <= 0) return 1;
+  const mins = (tNow - S.gatherT) / 60;
+  return 1 + BAL.momRate * Math.min(mins, BAL.momCaps[S.mom - 1]);
+}
+function incomeOf(S, tNow){
+  return S.P * BAL.perParticle
+    * Math.pow(BAL.lGain, S.L)
+    * shapeMult(S.shapes)
+    * spectrumMult(S.bands)
+    * prismMult(S.ref)
+    * momentumMult(S, tNow);
+}
+function reqFor(shapesOwned){           // requirement to unlock the NEXT shape
+  if (shapesOwned >= SHAPES.length - 1) {   // all gathered: refinement runs
+    const over = shapesOwned - (SHAPES.length - 1) + 1;
+    return BAL.reqBase * shapeMult(SHAPES.length - 1) * Math.pow(10, over);
+  }
+  return BAL.reqBase * shapeMult(shapesOwned);
+}
+function prismsFor(runEarned){
+  return Math.floor(Math.cbrt(runEarned / BAL.prismsDiv));
+}
+function shopCost(kind, lvl){
+  if (kind === 'ref') return BAL.refBase * Math.pow(BAL.refRate, lvl);
+  if (kind === 'head') return BAL.headBase * Math.pow(BAL.headRate, lvl);
+  if (kind === 'after') return BAL.afterCosts[lvl];
+  if (kind === 'mom') return BAL.momCosts[lvl];
+  return Infinity;
+}
+/*__PURE__END__*/
+
+/* =======================================================================
+   GAME STATE
+   ======================================================================= */
+const SAVE_KEY = 'flutterlight_v1';
+function freshState(){
+  return {
+    light: 0, runEarned: 0, allEarned: 0,
+    P: BAL.P0, L: 0, bands: [0,0,0,0,0,0,0],
+    shapes: 0, prisms: 0, ref: 0, head: 0, after: 0, mom: 0,
+    autoP: false, autoL: false, autoS: false,
+    t: 0, gatherT: 0, lastSave: Date.now(), lastIncome: 0,
+    totalGathers: 0,
+  };
+}
+let S = freshState();
+
+function saveGame(){
+  S.lastSave = Date.now(); S.lastIncome = incomeOf(S, S.t);
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
+}
+function loadGame(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (typeof d.P !== 'number') return false;
+    S = Object.assign(freshState(), d);
+    S.bands = Array.isArray(d.bands) ? d.bands.slice(0,7) : [0,0,0,0,0,0,0];
+    while (S.bands.length < 7) S.bands.push(0);
+    return true;
+  } catch(e){ return false; }
+}
+const hadSave = loadGame();
+
+function fmt(n){
+  if (!isFinite(n)) return '∞';
+  if (n < 0) return '-' + fmt(-n);
+  if (n < 1000) return n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n).toString();
+  const SUF = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc','QaDc','QiDc','SxDc','SpDc','OcDc','NoDc','Vg'];
+  let e = Math.floor(Math.log10(n) / 3);
+  if (e >= SUF.length) return n.toExponential(2);
+  const m = n / Math.pow(1000, e);
+  return (m >= 100 ? m.toFixed(0) : m >= 10 ? m.toFixed(1) : m.toFixed(2)) + SUF[e];
+}
+function fmtMult(n){
+  if (n >= 1000) return '×' + fmt(n);
+  return '×' + (n >= 10 ? n.toFixed(0) : n.toFixed(1));
+}
+
+/* =======================================================================
+   ACTIONS
+   ======================================================================= */
+function buyParticles(n){
+  n = Math.min(n, BAL.PCAP - S.P);
+  if (n <= 0) return 0;
+  const c = bulkParticleCost(S.P, n);
+  if (S.light < c) { n = maxParticlesAfford(S.P, S.light); if (n <= 0) return 0;
+    return buyParticles(n); }
+  S.light -= c; S.P += n;
+  return n;
+}
+function buyLight(n){
+  n = Math.min(n, BAL.LCAP - S.L);
+  if (n <= 0) return 0;
+  const r = BAL.lCostRate, b = BAL.lCostBase;
+  const c = b * Math.pow(r, S.L) * (Math.pow(r, n) - 1) / (r - 1);
+  if (S.light < c) { n = maxLightAfford(S.L, S.light); if (n <= 0) return 0;
+    return buyLight(n); }
+  S.light -= c; S.L += n;
+  return n;
+}
+function buyBand(b){
+  const l = S.bands[b];
+  if (l >= BAL.bandMaxLvl) return false;
+  const c = bandCost(b, l);
+  if (S.light < c) return false;
+  S.light -= c; S.bands[b] = l + 1;
+  if (S.bands[b] === BAL.bandMaxLvl) {       // chromatic resonance: free light level
+    if (S.L < BAL.LCAP) S.L++;
+    toast('CHROMATIC RESONANCE · +1 LIGHT LEVEL');
+  }
+  return true;
+}
+function nextShape(){ return Math.min(S.shapes + 1, SHAPES.length - 1); }
+function canGather(){ return S.runEarned >= reqFor(S.shapes); }
+
+function doGather(){
+  if (!canGather()) return;
+  const gained = prismsFor(S.runEarned);
+  S.prisms += gained;
+  const wasComplete = S.shapes >= SHAPES.length - 1;
+  if (!wasComplete) S.shapes++;
+  S.totalGathers++;
+  /* run reset */
+  S.light = 0; S.runEarned = 0;
+  S.P = BAL.P0 + BAL.headGain * S.head;
+  S.L = 0; S.bands = [0,0,0,0,0,0,0];
+  S.gatherT = S.t;
+  engine.ceremony(SHAPES[S.shapes].key,
+    wasComplete ? 'REFINEMENT COMPLETE' :
+    'GATHERED · ' + SHAPES[S.shapes].name + ' · ' + fmtMult(SHAPES[S.shapes].mult) + ' ' + SHAPES[S.shapes].sub.split('·').pop().trim().toUpperCase());
+  toast('+' + fmt(gained) + ' PRISMS');
+  refreshUI(true);
+  saveGame();
+}
+
+function buyShop(kind){
+  const lvlKey = { ref:'ref', head:'head', after:'after', mom:'mom' }[kind];
+  let lvl = S[lvlKey];
+  const c = shopCost(kind, lvl);
+  if (S.prisms < c) return false;
+  if (kind === 'after' && lvl >= BAL.afterCosts.length) return false;
+  if (kind === 'mom' && lvl >= BAL.momCosts.length) return false;
+  S.prisms -= c; S[lvlKey] = lvl + 1;
+  if (kind === 'autoP' ) {}
+  return true;
+}
+function buyAuto(kind){
+  const c = BAL.autoCosts[kind];
+  if (S[kind] || S.prisms < c) return false;
+  S.prisms -= c; S[kind] = true;
+  return true;
+}
+
+/* offline gains */
+(function offlineGains(){
+  const away = (Date.now() - S.lastSave) / 1000;
+  if (!hadSave || away < 60) return;
+  let capH = S.after > 0 ? BAL.afterCaps[S.after - 1] : BAL.baseAfterCap;
+  const eff = 0.5 * (S.shapes >= 9 ? 2 : 1);   // MÖBIUS band: offline ×2
+  const secs = Math.min(away, capH * 3600);
+  const gain = (S.lastIncome || incomeOf(S, S.t)) * secs * eff;
+  if (gain > 0) {
+    S.light += gain; S.runEarned += gain; S.allEarned += gain;
+    setTimeout(() => toast('WHILE YOU WERE AWAY · +' + fmt(gain) + ' LIGHT'), 600);
+  }
+})();
+
+/* =======================================================================
+   PARTICLE ENGINE (same family as the particle-film renderer)
+   ======================================================================= */
+const MAXN = 15000;
+const TAU = Math.PI * 2;
+const U = new Float32Array(MAXN), V = new Float32Array(MAXN);
+const R1 = new Float32Array(MAXN), R2 = new Float32Array(MAXN),
+      R3 = new Float32Array(MAXN), R4 = new Float32Array(MAXN);
+for (let i = 0; i < MAXN; i++) {
+  U[i] = (i * 0.618033988749895) % 1;
+  V[i] = (i * 0.7548776662466927) % 1;
+  R1[i] = Math.random(); R2[i] = Math.random(); R3[i] = Math.random(); R4[i] = Math.random();
+}
+
+/* heart: Taubin implicit surface, rejection-sampled (lazy) */
+const HEART = new Float32Array(MAXN * 3);
+let heartBuilt = false;
+function ensureHeart(){
+  if (heartBuilt) return;
+  const F = (x, y, z) => {
+    const a = x*x + 2.25*y*y + z*z - 1;
+    return a*a*a - x*x*z*z*z - 0.1125*y*y*z*z*z;
+  };
+  let count = 0, att = 0, eps = 0.0045;
+  while (count < MAXN && att < 2.4e6) {
+    const x = (Math.random()*2 - 1) * 1.35, y = (Math.random()*2 - 1) * 0.75,
+          z = (Math.random()*2 - 1) * 1.15;
+    att++;
+    if (Math.abs(F(x, y, z)) < eps) {
+      const j = count * 3;
+      HEART[j] = x*0.95; HEART[j+1] = z*0.95; HEART[j+2] = y*0.95;
+      count++;
+    }
+    if (att % 200000 === 0 && count < MAXN) eps *= 1.7;
+  }
+  while (count < MAXN) {
+    const src = (Math.random() * Math.max(1, count)) | 0;
+    const j = count * 3, k = src * 3;
+    HEART[j] = HEART[k] + (Math.random()-.5)*0.02;
+    HEART[j+1] = HEART[k+1] + (Math.random()-.5)*0.02;
+    HEART[j+2] = HEART[k+2] + (Math.random()-.5)*0.02;
+    count++;
+  }
+  heartBuilt = true;
+}
+
+/* polygon + star outline vertices (cage prism shapes) */
+const OUTLINES = {};
+function outlineOf(key){
+  if (OUTLINES[key]) return OUTLINES[key];
+  let pts;
+  if (key === 'tri')      pts = polyOutline(3, 1.55);
+  else if (key === 'square') pts = polyOutline(4, 1.45);
+  else if (key === 'pent')   pts = polyOutline(5, 1.45);
+  else if (key === 'hex')    pts = polyOutline(6, 1.35);
+  else if (key === 'star')    pts = starOutline(1.7, 0.66);
+  OUTLINES[key] = pts;
+  return pts;
+}
+function polyOutline(n, R){
+  const p = [];
+  for (let k = 0; k < n; k++) {
+    const a = -Math.PI/2 + k * TAU / n;
+    p.push([Math.cos(a) * R, Math.sin(a) * R]);
+  }
+  return p;
+}
+function starOutline(R, r){
+  const p = [];
+  for (let k = 0; k < 10; k++) {
+    const a = -Math.PI/2 + k * Math.PI / 5;
+    const rad = k % 2 ? r : R;
+    p.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+  }
+  return p;
+}
+
+const OUT = [0, 0, 0];
+function knotC(T, o) {
+  const w = 2 + Math.cos(3 * T);
+  o[0] = w * Math.cos(2 * T) * 0.55;
+  o[1] = Math.sin(3 * T) * 0.63;
+  o[2] = w * Math.sin(2 * T) * 0.55;
+}
+const KA = [0,0,0], KB = [0,0,0], KC = [0,0,0];
+
+function shapePos(key, i, t){
+  const u = U[i], v = V[i];
+  const r1 = R1[i], r2 = R2[i], r3 = R3[i], r4 = R4[i];
+  const j = i * 3;
+
+  switch (key) {
+  case 'sphere': {
+    const th = u * TAU, y0 = 1 - 2 * v;
+    const R = 1.55 * (1 + 0.05 * Math.sin(t * 1.1 + y0 * 1.8));
+    const rr = Math.sqrt(Math.max(0, 1 - y0 * y0));
+    OUT[0] = rr * Math.cos(th) * R; OUT[1] = y0 * R; OUT[2] = rr * Math.sin(th) * R;
+    return OUT;
+  }
+  case 'tri': case 'square': case 'pent': case 'hex': case 'star': {
+    const P = outlineOf(key);
+    const C = P.length;
+    const e = Math.min(C - 1, (u * C) | 0), f = u * C - e;
+    const a = P[e], b = P[(e + 1) % C];
+    const breathe = 1 + 0.03 * Math.sin(t * 1.4);
+    const px = (a[0] + (b[0] - a[0]) * f) * breathe;
+    const pz = (a[1] + (b[1] - a[1]) * f) * breathe;
+    const h = (key === 'star' ? 0.4 : 0.55) * (v * 2 - 1);
+    OUT[0] = px; OUT[1] = h; OUT[2] = pz;
+    return OUT;
+  }
+  case 'heart': {
+    ensureHeart();
+    const beat = Math.pow(Math.max(0, Math.sin(t * 4.2)), 10)
+               + 0.55 * Math.pow(Math.max(0, Math.sin(t * 4.2 - 0.7)), 10);
+    const sc = 1 + 0.085 * beat;
+    OUT[0] = HEART[j] * sc; OUT[1] = HEART[j+1] * sc; OUT[2] = HEART[j+2] * sc;
+    return OUT;
+  }
+  case 'galaxy': {
+    if (r4 < 0.05) {
+      const ang = r1 * TAU, c = r2 * 2 - 1;
+      const sq = Math.sqrt(Math.max(0, 1 - c * c));
+      const r = 1.2 + 1.6 * r3;
+      OUT[0] = Math.cos(ang) * sq * r; OUT[1] = c * r * 0.85; OUT[2] = Math.sin(ang) * sq * r;
+    } else {
+      const ai = (u * 3) | 0;
+      const rad = 0.3 + 2.0 * Math.pow(v, 0.6);
+      const fuzz = (r2 - .5) * 2 * (0.14 + 0.3 * rad / 2.3);
+      const ang = ai * (TAU / 3) + rad * 2.15 + fuzz + t * (0.5 + 0.5 / (0.6 + rad));
+      const th = 0.26 * Math.exp(-rad * 1.1) + 0.035;
+      OUT[0] = rad * Math.cos(ang); OUT[1] = (r3 - .5) * 2 * th; OUT[2] = rad * Math.sin(ang);
+    }
+    return OUT;
+  }
+  case 'mobius': {
+    const uu = u * 2 * TAU + t * 0.8;
+    const w = v * 2 - 1;
+    const c = Math.cos(uu / 2), s = Math.sin(uu / 2);
+    const rr = 1.25 + 0.6 * w * c;
+    OUT[0] = rr * Math.cos(uu); OUT[1] = 0.6 * w * s; OUT[2] = rr * Math.sin(uu);
+    return OUT;
+  }
+  case 'klein': {
+    const uu = u * TAU;
+    const vv = v * TAU + t * 0.35;
+    const cu = Math.cos(uu / 2), su = Math.sin(uu / 2);
+    const sv = Math.sin(vv), s2v = Math.sin(2 * vv);
+    const r = 2 + cu * sv - su * s2v;
+    OUT[0] = r * Math.cos(uu) * 0.55;
+    OUT[1] = (su * sv + cu * s2v) * 0.75;
+    OUT[2] = r * Math.sin(uu) * 0.55;
+    return OUT;
+  }
+  case 'knot': {
+    const T = u * TAU + t * 0.14;
+    knotC(T, KA); knotC(T + 0.01, KB); knotC(T - 0.01, KC);
+    let tx = KB[0]-KC[0], ty = KB[1]-KC[1], tz = KB[2]-KC[2];
+    let l = Math.sqrt(tx*tx + ty*ty + tz*tz) || 1; tx/=l; ty/=l; tz/=l;
+    let ax = ty*0.15 - tz, ay = tz*0.25 - tx*0.15, az = tx - ty*0.25;
+    l = Math.sqrt(ax*ax + ay*ay + az*az);
+    if (l < 1e-4) { ax = 1; ay = 0; az = 0; l = 1; }
+    ax/=l; ay/=l; az/=l;
+    const bx = ty*az - tz*ay, by = tz*ax - tx*az, bz = tx*ay - ty*ax;
+    const ph = v * TAU + t * 0.6;
+    const off = 0.17 * (0.8 + 0.4 * r4);
+    const co = Math.cos(ph) * off, si = Math.sin(ph) * off;
+    OUT[0] = KA[0] + ax*co + bx*si; OUT[1] = KA[1] + ay*co + by*si; OUT[2] = KA[2] + az*co + bz*si;
+    return OUT;
+  }
+  case 'tesseract': {
+    const e = (u * 32) | 0, q = u * 32 - e;
+    const va = TESSA[e] * 4, vb = TESSB[e] * 4;
+    const px = TESSV[va]   + (TESSV[vb]   - TESSV[va])   * q;
+    const py = TESSV[va+1] + (TESSV[vb+1] - TESSV[va+1]) * q;
+    const pz = TESSV[va+2] + (TESSV[vb+2] - TESSV[va+2]) * q;
+    const pw = TESSV[va+3] + (TESSV[vb+3] - TESSV[va+3]) * q;
+    const A = t * 0.5, B = t * 0.35;
+    const ca = Math.cos(A), sa = Math.sin(A), cb = Math.cos(B), sb = Math.sin(B);
+    const x1 = px * ca - pw * sa;
+    const w1 = px * sa + pw * ca;
+    const y1 = py * cb - pz * sb;
+    const z1 = py * sb + pz * cb;
+    const k = (3.2 / (3.2 - w1)) * 0.85;
+    OUT[0] = x1 * k; OUT[1] = y1 * k; OUT[2] = z1 * k;
+    return OUT;
+  }
+  case 'nova': {   // ceremony burst cloud
+    const rad = 3.2 * (0.3 + 0.7 * r3);
+    const phi = r1 * TAU + t * 0.42;
+    const e = (r2 * 2 - 1) * 0.92;
+    const sq = Math.sqrt(Math.max(0, 1 - e * e));
+    OUT[0] = Math.cos(phi) * sq * rad;
+    OUT[1] = e * rad * 0.62 + 0.12 * Math.sin(t * 0.9 + r4 * TAU);
+    OUT[2] = Math.sin(phi) * sq * rad;
+    return OUT;
+  }
+  }
+  OUT[0] = 0; OUT[1] = 0; OUT[2] = 0;
+  return OUT;
+}
+
+/* tesseract tables */
+const TESSV = new Float32Array(64);
+{
+  let vi = 0;
+  for (let a = -1; a <= 1; a += 2)
+    for (let b = -1; b <= 1; b += 2)
+      for (let c = -1; c <= 1; c += 2)
+        for (let d = -1; d <= 1; d += 2) {
+          TESSV[vi++] = a; TESSV[vi++] = b; TESSV[vi++] = c; TESSV[vi++] = d;
+        }
+}
+const TESSA = new Int16Array(32), TESSB = new Int16Array(32);
+{
+  let ei = 0;
+  for (let p = 0; p < 16; p++)
+    for (let q = p + 1; q < 16; q++) {
+      let diff = 0;
+      for (let k = 0; k < 4; k++) if (TESSV[p*4+k] !== TESSV[q*4+k]) diff++;
+      if (diff === 1) { TESSA[ei] = p; TESSB[ei] = q; ei++; }
+    }
+}
+
+/* per-shape camera */
+const CAMS = {
+  sphere:   { d:4.6, el:0.24, spin:0.12 },
+  tri:      { d:4.6, el:0.35, spin:0.22 },
+  square:   { d:4.6, el:0.35, spin:0.22 },
+  pent:     { d:4.6, el:0.35, spin:0.22 },
+  hex:      { d:4.6, el:0.38, spin:0.20 },
+  star:     { d:4.9, el:0.30, spin:0.26 },
+  heart:    { d:4.6, el:0.14, spin:0.10 },
+  galaxy:   { d:5.9, el:0.96, spin:0.07 },
+  mobius:   { d:4.7, el:0.45, spin:0.16 },
+  klein:    { d:4.7, el:0.55, spin:0.20 },
+  knot:     { d:5.3, el:0.55, spin:0.16 },
+  tesseract:{ d:6.2, el:0.28, spin:0.18 },
+  nova:     { d:6.8, el:0.30, spin:0.09 },
+};
+
+const pos = new Float32Array(MAXN * 3);
+
+/* blend machinery (transitions between formations) */
+const blend = {
+  active: false, key: 'sphere', t: 0, dur: 1, ease: null,
+  stagger: 0.3, swirl: 0.4, span: 1,
+  from: new Float32Array(MAXN * 3),
+  sw: new Float32Array(MAXN * 3),
+  delays: new Float32Array(MAXN),
+};
+function ioCubic(p){ return p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2; }
+function outBack(k){ return function(p){ const q = p - 1; return 1 + (k + 1)*q*q*q + k*q*q; }; }
+
+function startBlend(key, dur, ease, stagger, swirlAmp){
+  blend.from.set(pos);
+  for (let i = 0; i < MAXN; i++) {
+    const j = i * 3;
+    const fx = 0, fy = 0, fz = 0;      // travel estimated against frozen targets below
+    const T = shapePos(key, i, engine.t);
+    const tx = T[0] - blend.from[j], ty = T[1] - blend.from[j+1], tz = T[2] - blend.from[j+2];
+    const tl = Math.sqrt(tx*tx + ty*ty + tz*tz);
+    if (tl > 0.03) {
+      const ax = R2[i] - .5, ay = R3[i] - .5, az = R4[i] - .5;
+      const al = Math.sqrt(ax*ax + ay*ay + az*az) || 1;
+      const nx = ax/al, ny = ay/al, nz = az/al;
+      const cx = ty*nz - tz*ny, cy = tz*nx - tx*nz, cz = tx*ny - ty*nx;
+      const cl = Math.sqrt(cx*cx + cy*cy + cz*cz) || 1;
+      const mag = (R1[i] - .5) * 2 * swirlAmp;
+      blend.sw[j] = cx/cl*mag; blend.sw[j+1] = cy/cl*mag; blend.sw[j+2] = cz/cl*mag;
+    } else {
+      blend.sw[j] = 0; blend.sw[j+1] = 0; blend.sw[j+2] = 0;
+    }
+    blend.delays[i] = stagger * dur * R3[i];
+  }
+  blend.key = key; blend.t = 0; blend.dur = dur;
+  blend.ease = ease; blend.stagger = stagger;
+  blend.span = dur * (1 - stagger);
+  blend.active = true;
+  void fx; void fy; void fz;
+}
+
+/* engine controller */
+const engine = {
+  t: 0, key: SHAPES[S.shapes].key, camAz: 0.6,
+  camD: CAMS.sphere.d, camEl: CAMS.sphere.el, camSpin: CAMS.sphere.spin,
+  hueCur: 0.53, tapGlow: 0,
+  cer: null,          // ceremony state
+  displayN: 300,
+  ceremony(key, caption){
+    ensureKeyData(key);
+    const c = { t: 0, key, phase: 0, caption };
+    this.cer = c;
+    cerName.textContent = SHAPES[S.shapes].name;
+    cerSub.textContent = caption;
+    cerEl.classList.add('on');
+  },
+};
+
+function ensureKeyData(key){ if (key === 'heart') ensureHeart(); }
+
+function hueTarget(){
+  const BH = [0.0, 0.08, 0.16, 0.30, 0.44, 0.60, 0.72];
+  let b = -1;
+  for (let k = 0; k < 7; k++) if (S.bands[k] > 0) b = k;
+  if (b < 0) return 0.53;
+  return BH[b] + 0.015 * S.bands[b];
+}
+
+/* WebGL setup (identical shader family to the film) */
+const VSH = `
+precision highp float;
+attribute vec3 aPos;
+attribute vec4 aSeed;
+uniform mat4 uProj;
+uniform float uAz, uEl, uDist, uTime, uHue, uSat, uLight, uBright, uSize, uScale;
+varying vec3 vColor;
+varying float vAlpha;
+vec3 hsl2rgb(float h, float s, float l) {
+  vec3 rgb = clamp(abs(mod(h*6.0 + vec3(0.0,4.0,2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+  return l + s*(rgb - 0.5)*(1.0 - abs(2.0*l - 1.0));
+}
+void main() {
+  float cy = cos(uAz), sy = sin(uAz), cx = cos(uEl), sx = sin(uEl);
+  float x1 =  cy*aPos.x + sy*aPos.z;
+  float z1 = -sy*aPos.x + cy*aPos.z;
+  float y1 =  cx*aPos.y - sx*z1;
+  float z2 =  sx*aPos.y + cx*z1;
+  gl_Position = uProj * vec4(x1, y1, z2 - uDist, 1.0);
+  float viewZ = max(0.3, uDist - z2);
+  float twk = 0.72 + 0.28*sin(uTime*(1.2 + 2.2*fract(aSeed.z*7.31)) + aSeed.z*61.7);
+  gl_PointSize = min(uSize*uScale*(0.5 + 0.9*aSeed.y)*twk*6.0/viewZ, 48.0);
+  float h = fract(uHue + 0.09*aPos.y + 0.06*aPos.x + 0.14*aSeed.x + uTime*0.012);
+  vColor = hsl2rgb(h, uSat, uLight) * uBright;
+  vAlpha = 0.55 + 0.45*twk;
+}`;
+const FSH = `
+precision mediump float;
+varying vec3 vColor;
+varying float vAlpha;
+void main() {
+  vec2 c = gl_PointCoord - 0.5;
+  float d = length(c) * 2.0;
+  float a = max(0.0, 1.0 - d);
+  a *= a;
+  gl_FragColor = vec4(vColor, a * vAlpha);
+}`;
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl', {
+  antialias: false, alpha: false, depth: false, stencil: false,
+  powerPreference: 'high-performance'
+});
+if (!gl) { document.body.innerHTML = '<div style="padding:40px">WEBGL UNAVAILABLE</div>'; throw new Error('no webgl'); }
+function mkShader(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VSH));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FSH));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const APOS = gl.getAttribLocation(prog, 'aPos');
+const ASEED = gl.getAttribLocation(prog, 'aSeed');
+gl.enableVertexAttribArray(APOS); gl.enableVertexAttribArray(ASEED);
+const UL = {};
+['uProj','uAz','uEl','uDist','uTime','uHue','uSat','uLight','uBright','uSize','uScale']
+  .forEach(n => UL[n] = gl.getUniformLocation(prog, n));
+gl.disable(gl.DEPTH_TEST);
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+gl.clearColor(0.012, 0.01, 0.032, 1.0);
+function mkBuf(data, usage){
+  const b = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, data, usage);
+  return b;
+}
+const seeds = new Float32Array(MAXN * 4);
+for (let i = 0; i < MAXN; i++) {
+  seeds[i*4] = R1[i]; seeds[i*4+1] = R2[i]; seeds[i*4+2] = R3[i]; seeds[i*4+3] = R4[i];
+}
+const posBuf = mkBuf(pos, gl.DYNAMIC_DRAW);
+const seedBuf = mkBuf(seeds, gl.STATIC_DRAW);
+
+const SN = 380;
+const starPos = new Float32Array(SN * 3), starSeed = new Float32Array(SN * 4);
+for (let i = 0; i < SN; i++) {
+  const a = Math.random() * TAU, c = Math.random() * 2 - 1;
+  const sq = Math.sqrt(1 - c * c), r = 26 + 36 * Math.random();
+  starPos[i*3] = Math.cos(a)*sq*r; starPos[i*3+1] = c*r; starPos[i*3+2] = Math.sin(a)*sq*r;
+  starSeed[i*4] = Math.random(); starSeed[i*4+1] = 0.3 + 0.7*Math.random();
+  starSeed[i*4+2] = Math.random(); starSeed[i*4+3] = Math.random();
+}
+const starPosBuf = mkBuf(starPos, gl.STATIC_DRAW);
+const starSeedBuf = mkBuf(starSeed, gl.STATIC_DRAW);
+
+const projM = new Float32Array(16);
+let distFactor = 1;
+function setProj(aspect){
+  const f = 1 / Math.tan(21 * Math.PI / 180), near = 0.1, far = 100;
+  projM.fill(0);
+  projM[0] = f / aspect; projM[5] = f;
+  projM[10] = -(far + near) / (far - near); projM[11] = -1;
+  projM[14] = -(2 * far * near) / (far - near);
+  gl.uniformMatrix4fv(UL.uProj, false, projM);
+}
+let Wc = 0, Hc = 0;
+function resize(){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+  const h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+  if (w === Wc && h === Hc) return;
+  Wc = w; Hc = h;
+  canvas.width = w; canvas.height = h;
+  gl.viewport(0, 0, w, h);
+  setProj(w / h);
+  gl.uniform1f(UL.uScale, h / 380);
+  distFactor = Math.min(1.55, Math.max(1, 0.9 / (w / h)));
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* initial full-buffer fill at current formation */
+ensureKeyData(engine.key);
+for (let i = 0; i < MAXN; i++) {
+  const T = shapePos(engine.key, i, 0);
+  const j = i * 3;
+  pos[j] = T[0]; pos[j+1] = T[1]; pos[j+2] = T[2];
+}
+
+/* =======================================================================
+   GAME LOOP
+   ======================================================================= */
+let lastNow = performance.now();
+let acc = 0;
+const UIevery = 0.25;
+let uiAcc = 0;
+
+function gameTick(dt){
+  S.t += dt;
+  const inc = incomeOf(S, S.t);
+  S.light += inc * dt;
+  S.runEarned += inc * dt;
+  S.allEarned += inc * dt;
+  /* autopilots */
+  if (S.autoP) {
+    let guard = 0;
+    while (particleCost(S.P) <= inc * 15 && S.P < BAL.PCAP && guard++ < 200) buyParticles(1);
+  }
+  if (S.autoL) {
+    let guard = 0;
+    while (lightCost(S.L) <= inc * 30 && S.L < BAL.LCAP && guard++ < 200) buyLight(1);
+  }
+  if (S.autoS) {
+    let guard = 0;
+    while (guard++ < 50) {
+      let bb = -1, bc = Infinity;
+      for (let b = 0; b < 7; b++) {
+        const l = S.bands[b];
+        if (l >= BAL.bandMaxLvl) continue;
+        const c = bandCost(b, l);
+        if (c < bc) { bc = c; bb = b; }
+      }
+      if (bb < 0 || bc > inc * 60) break;
+      buyBand(bb);
+    }
+  }
+}
+
+function engineFrame(dt){
+  engine.t += dt;
+  const cer = engine.cer;
+  let key = engine.key, bright = 1.06, size = 0.9;
+
+  if (cer) {
+    cer.t += dt;
+    if (cer.phase === 0 && cer.t >= 0.02) {          // burst outward
+      startBlend('nova', 0.5, outBack(2.6), 0.25, 1.2);
+      cer.phase = 1; cer.pt = 0.02;
+    } else if (cer.phase === 1 && cer.t >= 0.55) {   // reform as the new shape
+      startBlend(cer.key, 1.15, outBack(2.4), 0.3, 0.35);
+      cer.phase = 2; cer.pt = 0.55;
+    } else if (cer.phase === 2 && cer.t >= 1.7) {
+      engine.key = cer.key;
+      engine.camD = CAMS[cer.key].d; engine.camEl = CAMS[cer.key].el; engine.camSpin = CAMS[cer.key].spin;
+      cer.phase = 3; cer.pt = 1.7;
+    } else if (cer.phase === 3 && cer.t >= 3.0) {
+      engine.cer = null;
+      cerEl.classList.remove('on');
+    }
+    bright = 1.3 + 1.9 * Math.exp(-(cer.t) * 1.8);
+    engine.displayN = MAXN;
+  }
+
+  if (!cer) {
+    engine.camSpin = CAMS[engine.key].spin;
+    engine.displayN = Math.max(60, Math.min(MAXN, Math.floor(400 * Math.pow(Math.max(1, S.P), 0.4))));
+  }
+  engine.camAz += engine.camSpin * dt;
+
+  /* positions */
+  const bl = blend.active ? blend : null;
+  if (bl) {
+    blend.t += dt;
+    if (blend.t >= blend.dur + 1e-6 && (tau - 0) >= 0) {
+      /* fallthrough handled below by per-particle clamp */
+    }
+    let anyLive = false;
+    for (let i = 0; i < MAXN; i++) {
+      const j = i * 3;
+      let p = (blend.t - blend.delays[i]) / blend.span;
+      if (p > 1) p = 1; else if (p < 0) p = 0; else anyLive = true;
+      const T = shapePos(blend.key, i, engine.t);
+      if (p >= 1) {
+        pos[j] = T[0]; pos[j+1] = T[1]; pos[j+2] = T[2];
+      } else {
+        const e = blend.ease(p), wf = Math.sin(Math.PI * p);
+        pos[j]   = blend.from[j]   + (T[0] - blend.from[j])   * e + blend.sw[j]   * wf;
+        pos[j+1] = blend.from[j+1] + (T[1] - blend.from[j+1]) * e + blend.sw[j+1] * wf;
+        pos[j+2] = blend.from[j+2] + (T[2] - blend.from[j+2]) * e + blend.sw[j+2] * wf;
+      }
+    }
+    if (!anyLive && blend.t > blend.dur) blend.active = false;
+  } else {
+    const keyNow = engine.key;
+    for (let i = 0; i < MAXN; i++) {
+      const T = shapePos(keyNow, i, engine.t);
+      const j = i * 3;
+      pos[j] = T[0]; pos[j+1] = T[1]; pos[j+2] = T[2];
+    }
+  }
+
+  /* hue drift toward spectrum */
+  const ht = hueTarget();
+  engine.hueCur += (ht - engine.hueCur) * Math.min(1, dt * 0.6);
+  engine.tapGlow *= Math.exp(-dt * 3.2);
+  bright += engine.tapGlow;
+
+  /* draw */
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform1f(UL.uTime, engine.t);
+  gl.uniform1f(UL.uAz, engine.camAz);
+  gl.uniform1f(UL.uEl, engine.camEl);
+  gl.uniform1f(UL.uDist, engine.camD * distFactor);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, starPosBuf);
+  gl.vertexAttribPointer(APOS, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, starSeedBuf);
+  gl.vertexAttribPointer(ASEED, 4, gl.FLOAT, false, 0, 0);
+  gl.uniform1f(UL.uHue, 0.6); gl.uniform1f(UL.uSat, 0.4); gl.uniform1f(UL.uLight, 0.8);
+  gl.uniform1f(UL.uBright, 0.7); gl.uniform1f(UL.uSize, 3.2);
+  gl.drawArrays(gl.POINTS, 0, SN);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+  gl.vertexAttribPointer(APOS, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf);
+  gl.vertexAttribPointer(ASEED, 4, gl.FLOAT, false, 0, 0);
+  gl.uniform1f(UL.uHue, engine.hueCur);
+  gl.uniform1f(UL.uSat, 0.9); gl.uniform1f(UL.uLight, 0.6);
+  gl.uniform1f(UL.uBright, bright);
+  gl.uniform1f(UL.uSize, cer ? 1.1 : 0.85);
+  gl.drawArrays(gl.POINTS, 0, engine.displayN);
+}
+
+function frame(now){
+  const dtms = Math.min(50, Math.max(0, now - lastNow));
+  lastNow = now;
+  const dt = dtms / 1000;
+  acc += dt;
+  let steps = 0;
+  while (acc >= 0.1 && steps < 50) { gameTick(0.1); acc -= 0.1; steps++; }
+  if (steps === 50) acc = 0;
+  engineFrame(dt);
+  uiAcc += dt;
+  if (uiAcc >= UIevery) { uiAcc = 0; refreshUI(false); }
+  requestAnimationFrame(frame);
+}
+
+/* =======================================================================
+   UI
+   ======================================================================= */
+const lightVal = document.getElementById('lightVal');
+const lightRate = document.getElementById('lightRate');
+const prismVal = document.getElementById('prismVal');
+const panel = document.getElementById('panel');
+const cerEl = document.getElementById('cer');
+const cerName = document.getElementById('cerName');
+const cerSub = document.getElementById('cerSub');
+const toastsEl = document.getElementById('toasts');
+const BANDNAMES = ['RED','ORANGE','YELLOW','GREEN','BLUE','INDIGO','VIOLET'];
+
+function toast(msg){
+  const d = document.createElement('div');
+  d.className = 'toast'; d.textContent = msg;
+  toastsEl.appendChild(d);
+  setTimeout(() => d.classList.add('bye'), 2800);
+  setTimeout(() => d.remove(), 3800);
+  while (toastsEl.children.length > 4) toastsEl.firstChild.remove();
+}
+
+/* tabs */
+let curTab = 'swarm';
+document.querySelectorAll('#tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    curTab = btn.dataset.t;
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b === btn));
+    panel.classList.toggle('on', true);
+    for (const s of ['swarm','spectrum','gather','prism']) {
+      document.getElementById('tab-' + s).style.display = (s === curTab) ? '' : 'none';
+    }
+    refreshUI(true);
+  });
+});
+panel.classList.add('on');
+
+/* build spectrum rows + shop rows once */
+const bandRowEls = [];
+{
+  const wrap = document.getElementById('bandRows');
+  for (let b = 0; b < 7; b++) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const who = document.createElement('div'); who.className = 'who';
+    const nameB = document.createElement('b');
+    nameB.textContent = BANDNAMES[b] + ' BAND';
+    const pips = document.createElement('span'); pips.className = 'pips';
+    for (let l = 0; l < 5; l++) { const i = document.createElement('i'); pips.appendChild(i); }
+    nameB.appendChild(pips);
+    const sub = document.createElement('span');
+    who.appendChild(nameB); who.appendChild(sub);
+    const btn = document.createElement('button'); btn.className = 'buy';
+    const cost = document.createElement('span'); cost.className = 'cost';
+    btn.textContent = '+1'; btn.appendChild(cost);
+    row.appendChild(who); row.appendChild(btn);
+    wrap.appendChild(row);
+    bandRowEls.push({ row, sub, btn, cost, pips: pips.children });
+    btn.addEventListener('click', () => { buyBand(b); refreshUI(true); });
+  }
+}
+const SHOP = [
+  { kind:'ref',   get:() => S.ref,   name:'REFRACTION',  eff:() => '×1.25 production / level' },
+  { kind:'head',  get:() => S.head,  name:'HEAD START',  eff:() => '+25 starting particles / level' },
+  { kind:'after', get:() => S.after, name:'AFTERGLOW',   eff:() => S.after ? ('offline cap: ' + (BAL.afterCaps[S.after-1] === Infinity ? '∞' : BAL.afterCaps[S.after-1] + 'h')) : ('offline cap: ' + BAL.baseAfterCap + 'h') },
+  { kind:'mom',   get:() => S.mom,   name:'MOMENTUM',    eff:() => '+2%/min since gather, cap ×' + BAL.momCaps[Math.min(S.mom, BAL.momCaps.length-1)] },
+];
+const shopRowEls = [];
+{
+  const wrap = document.getElementById('shopRows');
+  for (const it of SHOP) {
+    const row = document.createElement('div'); row.className = 'row';
+    const who = document.createElement('div'); who.className = 'who';
+    const b = document.createElement('b'); b.textContent = it.name;
+    const s = document.createElement('span');
+    who.appendChild(b); who.appendChild(s);
+    const btn = document.createElement('button'); btn.className = 'buy';
+    const cost = document.createElement('span'); cost.className = 'cost';
+    btn.textContent = 'BUY'; btn.appendChild(cost);
+    row.appendChild(who); row.appendChild(btn);
+    wrap.appendChild(row);
+    shopRowEls.push({ it, row, s, btn, cost });
+    btn.addEventListener('click', () => { buyShop(it.kind); refreshUI(true); saveGame(); });
+  }
+  /* autopilots */
+  for (const ak of ['autoP','autoL','autoS']) {
+    const label = { autoP:'AUTOPILOT · PARTICLES', autoL:'AUTOPILOT · LIGHT', autoS:'AUTOPILOT · SPECTRUM' }[ak];
+    const row = document.createElement('div'); row.className = 'row';
+    const who = document.createElement('div'); who.className = 'who';
+    const b = document.createElement('b'); b.textContent = label;
+    const s = document.createElement('span');
+    who.appendChild(b); who.appendChild(s);
+    const btn = document.createElement('button'); btn.className = 'buy';
+    const cost = document.createElement('span'); cost.className = 'cost';
+    btn.textContent = 'BUY'; btn.appendChild(cost);
+    row.appendChild(who); row.appendChild(btn);
+    wrap.appendChild(row);
+    shopRowEls.push({ autopilot: ak, row, s, btn, cost });
+    btn.addEventListener('click', () => { buyAuto(ak); refreshUI(true); saveGame(); });
+  }
+}
+
+const pCount = document.getElementById('pCount'), pInfo = document.getElementById('pInfo');
+const lCount = document.getElementById('lCount'), lInfo = document.getElementById('lInfo');
+const prodBreak = document.getElementById('prodBreak');
+const curShapeEl = document.getElementById('curShape');
+const nextName = document.getElementById('nextName'), nextSub = document.getElementById('nextSub');
+const nextPrisms = document.getElementById('nextPrisms'), nextBar = document.getElementById('nextBar');
+const nextReq = document.getElementById('nextReq'), gatherBtn = document.getElementById('gatherBtn');
+const museumEl = document.getElementById('museum');
+const prismNote = document.getElementById('prismNote');
+
+const bp1 = document.getElementById('bp1'), bp10 = document.getElementById('bp10'), bpMax = document.getElementById('bpMax');
+const bl1 = document.getElementById('bl1'), blMax = document.getElementById('blMax');
+
+bp1.addEventListener('click', () => { buyParticles(1); refreshUI(true); });
+bp10.addEventListener('click', () => { buyParticles(buyParticles(10) ? 0 : 0); refreshUI(true); });
+bpMax.addEventListener('click', () => { buyParticles(maxParticlesAfford(S.P, S.light)); refreshUI(true); });
+bl1.addEventListener('click', () => { buyLight(1); refreshUI(true); });
+blMax.addEventListener('click', () => { buyLight(maxLightAfford(S.L, S.light)); refreshUI(true); });
+gatherBtn.addEventListener('click', () => doGather());
+document.getElementById('saveBtn').addEventListener('click', () => { saveGame(); toast('SAVED'); });
+document.getElementById('wipeBtn').addEventListener('click', () => {
+  if (confirm('Wipe your swarm? All shapes, prisms and light will be lost.')) {
+    localStorage.removeItem(SAVE_KEY);
+    S = freshState();
+    engine.key = 'sphere'; engine.cer = null; blend.active = false;
+    cerEl.classList.remove('on');
+    toast('THE VOID RESETS');
+    refreshUI(true);
+  }
+});
+
+/* tap to inspire */
+canvas.addEventListener('pointerdown', e => {
+  if (panel.contains(e.target)) return;
+  const inc = incomeOf(S, S.t);
+  const gain = Math.max(10, inc * 1.0);
+  S.light += gain; S.runEarned += gain; S.allEarned += gain;
+  engine.tapGlow = 0.8;
+});
+
+function refreshUI(full){
+  const inc = incomeOf(S, S.t);
+  lightVal.textContent = fmt(S.light);
+  lightRate.textContent = fmt(inc) + ' /s';
+  prismVal.textContent = S.prisms > 0 || S.shapes > 0 ? '◆ ' + fmt(S.prisms) : '—';
+
+  if (curTab === 'swarm' || full) {
+    pCount.textContent = fmt(S.P);
+    pInfo.textContent = fmt(BAL.perParticle * Math.pow(BAL.lGain, S.L) * shapeMult(S.shapes) * spectrumMult(S.bands) * prismMult(S.ref) * momentumMult(S,S.t)) + ' light/s each';
+    const c1 = particleCost(S.P);
+    bp1.disabled = S.light < c1 || S.P >= BAL.PCAP;
+    bp1c.textContent = fmt(c1);
+    const n10 = Math.min(10, maxParticlesAfford(S.P, S.light));
+    const c10 = bulkParticleCost(S.P, Math.min(10, BAL.PCAP - S.P));
+    bp10.disabled = n10 < 10;
+    bp10c.textContent = fmt(c10);
+    const nM = maxParticlesAfford(S.P, S.light);
+    bpMax.disabled = nM < 1;
+    bpMaxc.textContent = nM >= 1 ? ('+' + fmt(nM)) : '—';
+    lCount.textContent = fmt(S.L);
+    lInfo.textContent = '×' + (Math.pow(BAL.lGain, S.L)).toFixed(2) + ' efficiency';
+    const cl1 = lightCost(S.L);
+    bl1.disabled = S.light < cl1 || S.L >= BAL.LCAP;
+    bl1c.textContent = fmt(cl1);
+    const lM = maxLightAfford(S.L, S.light);
+    blMax.disabled = lM < 1;
+    blMaxc.textContent = lM >= 1 ? ('+' + fmt(lM)) : '—';
+    prodBreak.textContent = 'P ' + fmt(S.P) + ' × level ×' + Math.pow(BAL.lGain,S.L).toFixed(2)
+      + ' × shapes ' + fmtMult(shapeMult(S.shapes))
+      + ' × spectrum ' + fmtMult(spectrumMult(S.bands))
+      + ' × refraction ' + fmtMult(prismMult(S.ref))
+      + ' × momentum ' + fmtMult(momentumMult(S, S.t));
+  }
+
+  if (curTab === 'spectrum' || full) {
+    for (let b = 0; b < 7; b++) {
+      const el = bandRowEls[b], lvl = S.bands[b];
+      for (let l = 0; l < 5; l++) el.pips[l].classList.toggle('f', l < lvl);
+      el.sub.textContent = lvl >= BAL.bandMaxLvl ? 'MASTERED' : '×1.10 all production';
+      const c = bandCost(b, lvl);
+      el.btn.disabled = lvl >= BAL.bandMaxLvl || S.light < c;
+      el.cost.textContent = lvl >= BAL.bandMaxLvl ? 'DONE' : fmt(c);
+    }
+  }
+
+  if (curTab === 'gather' || full) {
+    const cur = SHAPES[S.shapes];
+    curShapeEl.textContent = 'FORMATION: ' + cur.name + ' — ' + cur.sub + ' · shapes bonus ' + fmtMult(shapeMult(S.shapes));
+    const nk = nextShape();
+    const nx = SHAPES[nk];
+    const req = reqFor(S.shapes);
+    nextName.textContent = nx.name;
+    nextSub.textContent = nx.sub + ' · ' + fmtMult(nx.mult);
+    const pg = Math.min(1, S.runEarned / req);
+    nextBar.style.width = (pg * 100).toFixed(1) + '%';
+    nextReq.textContent = 'requires ' + fmt(req) + ' light earned this run (' + fmt(S.runEarned) + ')';
+    nextPrisms.textContent = '◆ +' + fmt(prismsFor(S.runEarned));
+    gatherBtn.disabled = !canGather();
+    gatherBtn.textContent = canGather() ? 'GATHER' : 'NOT YET';
+    let mus = '';
+    for (let k = 1; k < SHAPES.length; k++) {
+      const sh = SHAPES[k];
+      const got = k <= S.shapes;
+      mus += '<div class="musrow"><span class="' + (got ? 'got' : 'lock') + '">'
+        + (got ? '◆ ' : '◇ ') + sh.name + '</span><span class="' + (got ? 'got' : 'lock') + '">'
+        + fmtMult(sh.mult) + '</span></div>';
+    }
+    museumEl.innerHTML = mus;
+  }
+
+  if (curTab === 'prism' || full) {
+    prismNote.textContent = '◆ ' + fmt(S.prisms) + ' prisms — gathered from runs: cbrt(earnings/1e4)';
+    for (const el of shopRowEls) {
+      if (el.autopilot) {
+        const owned = S[el.autopilot];
+        el.s.textContent = owned ? 'ONLINE' : 'offline · auto-buys when affordable';
+        el.btn.disabled = owned || S.prisms < BAL.autoCosts[el.autopilot];
+        el.cost.textContent = owned ? 'ACTIVE' : '◆ ' + fmt(BAL.autoCosts[el.autopilot]);
+      } else {
+        const it = el.it, lvl = it.get();
+        const capped = (it.kind === 'after' && lvl >= BAL.afterCosts.length)
+                    || (it.kind === 'mom' && lvl >= BAL.momCosts.length);
+        el.s.textContent = it.eff() + (lvl > 0 ? ' · level ' + lvl : '');
+        el.btn.disabled = capped || S.prisms < shopCost(it.kind, lvl);
+        el.cost.textContent = capped ? 'MAX' : '◆ ' + fmt(shopCost(it.kind, lvl));
+      }
+    }
+  }
+}
+refreshUI(true);
+
+/* autosave */
+setInterval(saveGame, 5000);
+window.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+
+/* start */
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

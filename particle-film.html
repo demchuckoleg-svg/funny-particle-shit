@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05040a">
+<title>Particle Geometry — 15,000 particles · 40s loop</title>
+<!--
+  PARTICLE GEOMETRY — a 40-second continuous "shot", seamless loop.
+  15,000 particles build ten formations, several of them genuinely
+  avant-garde: Klein bottle, flowing Mobius band, gyroid minimal surface,
+  Hopf fibration (linked rings), the Lorenz attractor, and a tesseract
+  rotating through 4-D. Transitions alternate: some snappy (elastic
+  overshoot), some flowing (staggered, swirling).
+
+  URL params:  ?n=COUNT   particle count override (default 15000)
+               ?t=SECONDS start time offset (for screenshots/testing)
+  Input: drag to orbit, pinch / wheel to zoom.
+-->
+<style>
+  :root { --acc: hsl(190,90%,62%); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; background:#05040a;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:#cfd6e4; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #c:active { cursor:grabbing; }
+
+  /* ambient colour wash + vignette over the render */
+  #neb { position:fixed; inset:0; pointer-events:none; z-index:1; mix-blend-mode:screen; opacity:.55;
+    background:
+      radial-gradient(720px 720px at 18% 26%, rgba(64,28,130,.32), transparent 70%),
+      radial-gradient(820px 640px at 84% 74%, rgba(18,64,124,.28), transparent 70%); }
+  #vig { position:fixed; inset:0; pointer-events:none; z-index:2;
+    background: radial-gradient(ellipse at 50% 42%, transparent 52%, rgba(2,2,8,.62) 100%); }
+
+  /* opening title card */
+  #intro { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px; pointer-events:none;
+    opacity:0; animation: introIn 1.3s ease .45s forwards; }
+  #intro.gone { opacity:0; transition:opacity 1.2s ease; animation:none; }
+  #intro h1 { font-weight:300; text-align:center; color:#f3f6ff;
+    font-size:clamp(20px,6vw,56px); letter-spacing:.42em; text-indent:.42em;
+    text-shadow:0 0 26px rgba(120,180,255,.38); }
+  #intro p  { font-size:clamp(9px,2.3vw,13px); letter-spacing:.3em; color:var(--acc); opacity:.9; }
+  @keyframes introIn { to { opacity:1; } }
+
+  /* scene caption, bottom-left */
+  #label { position:fixed; left:clamp(14px,4vw,46px); bottom:clamp(28px,7vh,68px);
+    pointer-events:none; z-index:5; }
+  #label .row { display:flex; align-items:baseline; gap:12px; }
+  #snum  { font-size:clamp(11px,2.6vw,15px); font-weight:700; letter-spacing:.2em; color:var(--acc); }
+  #sname { font-size:clamp(15px,4.2vw,30px); font-weight:300; letter-spacing:.32em; color:#f4f7ff;
+    text-shadow:0 0 18px rgba(140,190,255,.28); }
+  #chip  { display:inline-block; margin-top:10px; padding:5px 11px 4px 13px; border-radius:999px;
+    font-size:clamp(9px,2.1vw,11px); letter-spacing:.3em; color:var(--acc);
+    border:1px solid var(--acc); opacity:.8; }
+  #label.anim .row  { animation: rowIn .7s cubic-bezier(.2,.9,.25,1) both; }
+  #label.anim #chip { animation: rowIn .7s cubic-bezier(.2,.9,.25,1) .12s both; }
+  @keyframes rowIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+  /* 40-second loop progress */
+  #bar { position:fixed; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.06); z-index:6; }
+  #fill { height:100%; width:0%; background:var(--acc); box-shadow:0 0 12px var(--acc); }
+
+  #hint { position:fixed; right:14px; bottom:calc(12px + env(safe-area-inset-bottom,0px));
+    font-size:10px; letter-spacing:.22em; color:rgba(220,230,255,.38); pointer-events:none; z-index:5; }
+
+  #fallback { position:fixed; inset:0; display:none; place-items:center; z-index:9;
+    font-size:13px; letter-spacing:.12em; color:#c9d4ea; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="neb"></div>
+<div id="vig"></div>
+
+<div id="intro">
+  <h1>PARTICLE GEOMETRY</h1>
+  <p id="introsub">15,000 PARTICLES · A 40-SECOND SHOT · SEAMLESS LOOP</p>
+</div>
+
+<div id="label">
+  <div class="row"><span id="snum">01</span><span id="sname">PRIMORDIAL SPHERE</span></div>
+  <span id="chip">FLOWING TRANSITION</span>
+</div>
+
+<div id="bar"><div id="fill"></div></div>
+<div id="hint">DRAG TO ORBIT · PINCH TO ZOOM</div>
+<div id="fallback">WEBGL IS NOT AVAILABLE IN THIS BROWSER.</div>
+
+<script>
+'use strict';
+
+/* =================== config =================== */
+const qs = new URLSearchParams(location.search);
+const N = Math.min(40000, Math.max(500, parseInt(qs.get('n') || '15000', 10) || 15000));
+const T0 = parseFloat(qs.get('t') || '0') || 0;
+
+/* ten scenes, variable lengths, summing to exactly 40 s */
+const SCENES = [
+  { id:'sphere',    num:'01', name:'PRIMORDIAL SPHERE', mood:'flowing', len:4.5,
+    trans:1.7,  ease:'ioCubic', stagger:0.45, swirl:0.60, hue:0.53, size:0.90,
+    cam:{ d:4.60, el:0.24, spin:0.12 } },
+  { id:'klein',     num:'02', name:'KLEIN BOTTLE',       mood:'snappy', len:3.5,
+    trans:0.90, ease:'back2.2', stagger:0.18, swirl:0.16, hue:0.88, size:0.85,
+    cam:{ d:4.70, el:0.55, spin:0.20 } },
+  { id:'mobius',    num:'03', name:'MÖBIUS FLOW',        mood:'flowing', len:3.5,
+    trans:1.4,  ease:'ioCubic', stagger:0.42, swirl:0.55, hue:0.12, size:0.90,
+    cam:{ d:4.70, el:0.45, spin:0.16 } },
+  { id:'gyroid',    num:'04', name:'GYROID FIELD',       mood:'snappy', len:3.5,
+    trans:0.85, ease:'back2.4', stagger:0.15, swirl:0.12, hue:0.32, size:0.70,
+    cam:{ d:5.60, el:0.30, spin:0.12 } },
+  { id:'galaxy',    num:'05', name:'SPIRAL GALAXY',      mood:'flowing', len:4.5,
+    trans:1.8,  ease:'ioQuint', stagger:0.50, swirl:0.55, hue:0.72, size:0.70,
+    cam:{ d:5.90, el:0.96, spin:0.07 } },
+  { id:'hopf',      num:'06', name:'HOPF FIBRATION',    mood:'flowing', len:4.5,
+    trans:1.7,  ease:'ioQuint', stagger:0.45, swirl:0.60, hue:0.45, size:0.85,
+    cam:{ d:6.40, el:0.35, spin:0.10 } },
+  { id:'lorenz',    num:'07', name:'LORENZ BUTTERFLY',   mood:'flowing', len:4.5,
+    trans:1.6,  ease:'ioQuint', stagger:0.42, swirl:0.60, hue:0.07, size:0.90,
+    cam:{ d:5.40, el:0.18, spin:0.12 } },
+  { id:'tesseract', num:'08', name:'TESSERACT',          mood:'snappy', len:3.5,
+    trans:1.0,  ease:'back2.6', stagger:0.20, swirl:0.20, hue:0.60, size:0.80,
+    cam:{ d:6.20, el:0.28, spin:0.18 } },
+  { id:'heart',     num:'09', name:'HEARTBEAT',          mood:'snappy', len:4.0,
+    trans:1.0,  ease:'back2.6', stagger:0.22, swirl:0.20, hue:0.97, size:1.10,
+    cam:{ d:4.60, el:0.14, spin:0.10 } },
+  { id:'nova',      num:'10', name:'SUPERNOVA',         mood:'explosive', len:4.0,
+    trans:0.95, ease:'back1.8', stagger:0.50, swirl:1.10, hue:0.50, size:1.00,
+    cam:{ d:6.80, el:0.30, spin:0.09 } },
+];
+
+/* cumulative scene start times + total loop length (40 s) */
+const STARTS = [];
+{
+  let a = 0;
+  for (const s of SCENES) { STARTS.push(a); a += s.len; }
+}
+const LOOP_LEN = STARTS[STARTS.length - 1] + SCENES[SCENES.length - 1].len;
+const TAU = Math.PI * 2;
+
+/* =================== easings =================== */
+function ioCubic(p){ return p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2; }
+function ioQuint(p){ return p < .5 ? 16*p*p*p*p*p : 1 - Math.pow(-2*p + 2, 5) / 2; }
+function outBack(k){ return function(p){ const q = p - 1; return 1 + (k + 1)*q*q*q + k*q*q; }; }
+const EASES = {
+  ioCubic, ioQuint,
+  'back1.8': outBack(1.8), 'back2.2': outBack(2.2),
+  'back2.4': outBack(2.4), 'back2.6': outBack(2.6),
+};
+
+/* =================== per-particle tables =================== */
+/* low-discrepancy (u,v): every parametric shape gets even coverage */
+const U = new Float32Array(N), V = new Float32Array(N);
+const R1 = new Float32Array(N), R2 = new Float32Array(N), R3 = new Float32Array(N), R4 = new Float32Array(N);
+for (let i = 0; i < N; i++) {
+  U[i] = (i * 0.618033988749895) % 1;
+  V[i] = (i * 0.7548776662466927) % 1;
+  R1[i] = Math.random(); R2[i] = Math.random(); R3[i] = Math.random(); R4[i] = Math.random();
+}
+
+/* =================== heart: Taubin implicit surface, rejection-sampled shell =================== */
+const HEART = new Float32Array(N * 3);
+(function buildHeart() {
+  const F = (x, y, z) => {                 // (x^2 + 9/4 y^2 + z^2 - 1)^3 - x^2 z^3 - 9/80 y^2 z^3
+    const a = x*x + 2.25*y*y + z*z - 1;
+    return a*a*a - x*x*z*z*z - 0.1125*y*y*z*z*z;
+  };
+  let count = 0, att = 0, eps = 0.0045;
+  const MAX = 2.4e6;
+  while (count < N && att < MAX) {
+    const x = (Math.random()*2 - 1) * 1.35;
+    const y = (Math.random()*2 - 1) * 0.75;
+    const z = (Math.random()*2 - 1) * 1.15;
+    att++;
+    if (Math.abs(F(x, y, z)) < eps) {
+      const j = count * 3;
+      HEART[j] = x * 0.95; HEART[j+1] = z * 0.95; HEART[j+2] = y * 0.95;  // z is up
+      count++;
+    }
+    if (att % 200000 === 0 && count < N) eps *= 1.7;   // relax the shell if starving
+  }
+  while (count < N) {                                   // top up with jittered copies
+    const src = (Math.random() * Math.max(1, count)) | 0;
+    const j = count * 3, k = src * 3;
+    HEART[j]   = HEART[k]   + (Math.random() - .5) * 0.02;
+    HEART[j+1] = HEART[k+1] + (Math.random() - .5) * 0.02;
+    HEART[j+2] = HEART[k+2] + (Math.random() - .5) * 0.02;
+    count++;
+  }
+})();
+
+/* =================== gyroid: triply periodic minimal surface, sampled shell =================== */
+const GYROID = new Float32Array(N * 3);
+(function buildGyroid() {
+  const F = (x, y, z) => Math.sin(x)*Math.cos(y) + Math.sin(y)*Math.cos(z) + Math.sin(z)*Math.cos(x);
+  const B = 1.5 * Math.PI;                  // box +-1.5 pi (one and a half periods)
+  let count = 0, att = 0, eps = 0.025;
+  const MAX = 2.5e6;
+  while (count < N && att < MAX) {
+    const x = (Math.random()*2 - 1) * B;
+    const y = (Math.random()*2 - 1) * B;
+    const z = (Math.random()*2 - 1) * B;
+    att++;
+    if (Math.abs(F(x, y, z)) < eps) {
+      const j = count * 3;
+      GYROID[j] = x * 0.34; GYROID[j+1] = z * 0.34; GYROID[j+2] = y * 0.34;
+      count++;
+    }
+    if (att % 250000 === 0 && count < N) eps *= 1.6;
+  }
+  while (count < N) {
+    const src = (Math.random() * Math.max(1, count)) | 0;
+    const j = count * 3, k = src * 3;
+    GYROID[j]   = GYROID[k]   + (Math.random() - .5) * 0.01;
+    GYROID[j+1] = GYROID[k+1] + (Math.random() - .5) * 0.01;
+    GYROID[j+2] = GYROID[k+2] + (Math.random() - .5) * 0.01;
+    count++;
+  }
+})();
+
+/* =================== lorenz attractor: pre-integrated chaotic trajectory =================== */
+const LOR_M = 4000;
+const LOR = new Float32Array(LOR_M * 3);
+(function buildLorenz() {
+  let x = 0.1, y = 0, z = 0;
+  const dt = 0.004;
+  const step = () => {                   // midpoint (RK2) integration
+    const dx = 10 * (y - x), dy = x * (28 - z) - y, dz = x * y - (8/3) * z;
+    const mx = x + dx * dt * 0.5, my = y + dy * dt * 0.5, mz = z + dz * dt * 0.5;
+    const ex = 10 * (my - mx), ey = mx * (28 - mz) - my, ez = mx * my - (8/3) * mz;
+    x += ex * dt; y += ey * dt; z += ez * dt;
+  };
+  for (let s = 0; s < 600; s++) step();  // skip the transient
+  for (let s = 0; s < LOR_M; s++) {
+    step();
+    const j = s * 3;
+    LOR[j]   = x * 0.058;
+    LOR[j+1] = (z - 24) * 0.058;         // centre vertically
+    LOR[j+2] = y * 0.058;
+  }
+})();
+
+/* =================== hopf fibration: linked rings via stereographic S^3 projection =================== */
+const NF = 110;                            // number of fibres (circles)
+const ETA = new Float32Array(NF), DEL = new Float32Array(NF), HDIR = new Float32Array(NF);
+for (let k = 0; k < NF; k++) {
+  ETA[k] = 0.16 + 0.76 * Math.pow((k * 0.618033988749895) % 1, 0.75);   // fibre radius class
+  DEL[k] = k * 2.399963229728653;                                       // golden-angle azimuth
+  HDIR[k] = k % 2 ? 1 : -1;                                             // alternate ring spin
+}
+
+/* =================== tesseract: 16 vertices + 32 edges in 4-D =================== */
+const TESSV = new Float32Array(64);        // 16 x (x,y,z,w)
+{
+  let vi = 0;
+  for (let a = -1; a <= 1; a += 2)
+    for (let b = -1; b <= 1; b += 2)
+      for (let c = -1; c <= 1; c += 2)
+        for (let d = -1; d <= 1; d += 2) {
+          TESSV[vi++] = a; TESSV[vi++] = b; TESSV[vi++] = c; TESSV[vi++] = d;
+        }
+}
+const TESSA = new Int16Array(32), TESSB = new Int16Array(32);
+{
+  let ei = 0;
+  for (let p = 0; p < 16; p++)
+    for (let q = p + 1; q < 16; q++) {
+      let diff = 0;
+      for (let k = 0; k < 4; k++) if (TESSV[p*4 + k] !== TESSV[q*4 + k]) diff++;
+      if (diff === 1) { TESSA[ei] = p; TESSB[ei] = q; ei++; }
+    }
+}
+
+/* =================== shape functions =================== */
+/* each maps particle i + time to a live 3-D position (idle motion baked in) */
+const OUT = [0, 0, 0];
+
+function beat(t) {  // lub-dub cardiac pulse
+  const a = Math.sin(t * 4.2), b = Math.sin(t * 4.2 - 0.7);
+  return Math.pow(a > 0 ? a : 0, 10) + 0.55 * Math.pow(b > 0 ? b : 0, 10);
+}
+
+function shape(id, i, t, tau) {
+  const u = U[i], v = V[i];
+  const r1 = R1[i], r2 = R2[i], r3 = R3[i], r4 = R4[i];
+  const j = i * 3;
+
+  switch (id) {
+
+  case 'sphere': {                        // fibonacci-style shell, gentle breathing
+    const th = u * TAU, y0 = 1 - 2 * v;
+    const R = 1.62 * (1 + 0.045 * Math.sin(t * 1.1 + y0 * 1.8));
+    const rr = Math.sqrt(Math.max(0, 1 - y0 * y0));
+    OUT[0] = rr * Math.cos(th) * R;
+    OUT[1] = y0 * R;
+    OUT[2] = rr * Math.sin(th) * R;
+    break;
+  }
+
+  case 'klein': {                         // figure-8 immersion; cross-sections shimmer
+    const uu = u * TAU;
+    const vv = v * TAU + t * 0.35;
+    const cu = Math.cos(uu / 2), su = Math.sin(uu / 2);
+    const sv = Math.sin(vv), s2v = Math.sin(2 * vv);
+    const r = 2 + cu * sv - su * s2v;
+    OUT[0] = r * Math.cos(uu) * 0.55;
+    OUT[1] = (su * sv + cu * s2v) * 0.75;
+    OUT[2] = r * Math.sin(uu) * 0.55;
+    break;
+  }
+
+  case 'mobius': {                        // one-sided band; particles flow along it, no seam
+    const uu = u * 2 * TAU + t * 0.8;      // 0..4pi double cover = seamless wrap
+    const w = v * 2 - 1;
+    const c = Math.cos(uu / 2), s = Math.sin(uu / 2);
+    const rr = 1.25 + 0.6 * w * c;
+    OUT[0] = rr * Math.cos(uu);
+    OUT[1] = 0.6 * w * s;
+    OUT[2] = rr * Math.sin(uu);
+    break;
+  }
+
+  case 'gyroid': {                        // frozen minimal-surface sculpture, slow tumble
+    const ang = t * 0.22;
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const x = GYROID[j], y = GYROID[j+1], z = GYROID[j+2];
+    OUT[0] = x * c - z * s;
+    OUT[1] = y;
+    OUT[2] = x * s + z * c;
+    break;
+  }
+
+  case 'galaxy': {                        // 3 winding arms, halo stars, disk shear
+    if (r4 < 0.05) {
+      const ang = r1 * TAU, c = r2 * 2 - 1;
+      const sq = Math.sqrt(Math.max(0, 1 - c * c));
+      const r = 1.2 + 1.6 * r3;
+      OUT[0] = Math.cos(ang) * sq * r;
+      OUT[1] = c * r * 0.85;
+      OUT[2] = Math.sin(ang) * sq * r;
+    } else {
+      const ai = (u * 3) | 0;
+      const rad = 0.3 + 2.0 * Math.pow(v, 0.6);
+      const fuzz = (r2 - .5) * 2 * (0.14 + 0.3 * rad / 2.3);
+      const ang = ai * (TAU / 3) + rad * 2.15 + fuzz + t * (0.5 + 0.5 / (0.6 + rad));
+      const th = 0.26 * Math.exp(-rad * 1.1) + 0.035;
+      OUT[0] = rad * Math.cos(ang);
+      OUT[1] = (r3 - .5) * 2 * th;
+      OUT[2] = rad * Math.sin(ang);
+    }
+    break;
+  }
+
+  case 'hopf': {                          // linked circles filling S^3, stereographically
+    const k = (u * NF) | 0;
+    const eta = ETA[k];
+    const s = v * TAU + t * 0.5 * HDIR[k];
+    const ce = Math.cos(eta), se = Math.sin(eta);
+    const sd = s + DEL[k];
+    const d = 1 / (1 - se * Math.sin(sd));
+    OUT[0] = ce * Math.cos(s) * d * 0.62;
+    OUT[1] = se * Math.cos(sd) * d * 0.62;
+    OUT[2] = ce * Math.sin(s) * d * 0.62;
+    break;
+  }
+
+  case 'lorenz': {                        // chaotic stream flowing along the butterfly
+    let idx = (u * LOR_M + t * (LOR_M / 7)) % LOR_M;
+    if (idx < 0) idx += LOR_M;
+    const i0 = idx | 0, f = idx - i0;
+    const j0 = i0 * 3, j1 = ((i0 + 1) % LOR_M) * 3;
+    const spread = r4 > 0.94 ? 0.4 : 0.05;   // a few particles haze outward
+    OUT[0] = LOR[j0]   + (LOR[j1]   - LOR[j0])   * f + (r1 - .5) * 2 * spread;
+    OUT[1] = LOR[j0+1] + (LOR[j1+1] - LOR[j0+1]) * f + (r2 - .5) * 2 * spread;
+    OUT[2] = LOR[j0+2] + (LOR[j1+2] - LOR[j0+2]) * f + (r3 - .5) * 2 * spread;
+    break;
+  }
+
+  case 'tesseract': {                     // hypercube rotating in two 4-D planes
+    const e = (u * 32) | 0, q = u * 32 - e;
+    const va = TESSA[e] * 4, vb = TESSB[e] * 4;
+    const px = TESSV[va]   + (TESSV[vb]   - TESSV[va])   * q;
+    const py = TESSV[va+1] + (TESSV[vb+1] - TESSV[va+1]) * q;
+    const pz = TESSV[va+2] + (TESSV[vb+2] - TESSV[va+2]) * q;
+    const pw = TESSV[va+3] + (TESSV[vb+3] - TESSV[va+3]) * q;
+    const A = t * 0.5, B = t * 0.35;       // (x,w) and (y,z) plane rotations
+    const ca = Math.cos(A), sa = Math.sin(A), cb = Math.cos(B), sb = Math.sin(B);
+    const x1 = px * ca - pw * sa;
+    const w1 = px * sa + pw * ca;
+    const y1 = py * cb - pz * sb;
+    const z1 = py * sb + pz * cb;
+    const k = (3.2 / (3.2 - w1)) * 0.85;  // perspective from 4-D
+    OUT[0] = x1 * k;
+    OUT[1] = y1 * k;
+    OUT[2] = z1 * k;
+    break;
+  }
+
+  case 'heart': {                         // sampled surface, beating
+    const sc = 1 + 0.085 * beat(t);
+    OUT[0] = HEART[j] * sc;
+    OUT[1] = HEART[j+1] * sc;
+    OUT[2] = HEART[j+2] * sc;
+    break;
+  }
+
+  case 'nova': {                          // exploded cloud slowly condensing
+    const Rg = 3.2 - 1.65 * ioCubic(Math.min(1, tau / 3.05));
+    const rad = Rg * (0.3 + 0.7 * r3);
+    const phi = r1 * TAU + t * 0.42;
+    const e = (r2 * 2 - 1) * 0.92;
+    const sq = Math.sqrt(Math.max(0, 1 - e * e));
+    OUT[0] = Math.cos(phi) * sq * rad;
+    OUT[1] = e * rad * 0.62 + 0.12 * Math.sin(t * 0.9 + r4 * TAU);
+    OUT[2] = Math.sin(phi) * sq * rad;
+    break;
+  }
+  }
+}
+
+/* =================== state buffers =================== */
+const pos   = new Float32Array(N * 3);   // live positions
+const from  = new Float32Array(N * 3);   // transition snapshot
+const tgt0  = new Float32Array(N * 3);   // targets at transition start
+const sw    = new Float32Array(N * 3);   // per-particle swirl vectors
+const delays = new Float32Array(N);
+
+/* opening state: the full supernova dust cloud, about to become the sphere */
+for (let i = 0; i < N; i++) {
+  shape('nova', i, 0, 0);
+  const j = i * 3;
+  pos[j] = OUT[0]; pos[j+1] = OUT[1]; pos[j+2] = OUT[2];
+}
+
+/* =================== webgl =================== */
+const VSH = `
+precision highp float;
+attribute vec3 aPos;
+attribute vec4 aSeed;
+uniform mat4 uProj;
+uniform float uAz, uEl, uDist, uTime, uHueA, uHueB, uHueMix;
+uniform float uSat, uLight, uBright, uSize, uScale;
+varying vec3 vColor;
+varying float vAlpha;
+vec3 hsl2rgb(float h, float s, float l) {
+  vec3 rgb = clamp(abs(mod(h*6.0 + vec3(0.0,4.0,2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+  return l + s*(rgb - 0.5)*(1.0 - abs(2.0*l - 1.0));
+}
+void main() {
+  float cy = cos(uAz), sy = sin(uAz), cx = cos(uEl), sx = sin(uEl);
+  float x1 =  cy*aPos.x + sy*aPos.z;
+  float z1 = -sy*aPos.x + cy*aPos.z;
+  float y1 =  cx*aPos.y - sx*z1;
+  float z2 =  sx*aPos.y + cx*z1;
+  gl_Position = uProj * vec4(x1, y1, z2 - uDist, 1.0);
+  float viewZ = max(0.3, uDist - z2);
+  float twk = 0.72 + 0.28*sin(uTime*(1.2 + 2.2*fract(aSeed.z*7.31)) + aSeed.z*61.7);
+  gl_PointSize = min(uSize*uScale*(0.5 + 0.9*aSeed.y)*twk*6.0/viewZ, 48.0);
+  float h = fract(mix(uHueA, uHueB, uHueMix) + 0.09*aPos.y + 0.06*aPos.x + 0.14*aSeed.x + uTime*0.012);
+  vColor = hsl2rgb(h, uSat, uLight) * uBright;
+  vAlpha = 0.55 + 0.45*twk;
+}`;
+const FSH = `
+precision mediump float;
+varying vec3 vColor;
+varying float vAlpha;
+void main() {
+  vec2 c = gl_PointCoord - 0.5;
+  float d = length(c) * 2.0;
+  float a = max(0.0, 1.0 - d);
+  a *= a;
+  gl_FragColor = vec4(vColor, a * vAlpha);
+}`;
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl', {
+  antialias: false, alpha: false, depth: false, stencil: false,
+  powerPreference: 'high-performance'
+});
+const fallback = document.getElementById('fallback');
+function die(msg) { fallback.style.display = 'grid'; throw new Error(msg); }
+if (!gl) die('WebGL unavailable');
+
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s)); die('shader compile failed');
+  }
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VSH));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FSH));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+  console.error(gl.getProgramInfoLog(prog)); die('link failed');
+}
+gl.useProgram(prog);
+
+const APOS = gl.getAttribLocation(prog, 'aPos');
+const ASEED = gl.getAttribLocation(prog, 'aSeed');
+gl.enableVertexAttribArray(APOS);
+gl.enableVertexAttribArray(ASEED);
+
+const UL = {};
+['uProj','uAz','uEl','uDist','uTime','uHueA','uHueB','uHueMix',
+ 'uSat','uLight','uBright','uSize','uScale'].forEach(n => UL[n] = gl.getUniformLocation(prog, n));
+
+gl.disable(gl.DEPTH_TEST);
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE);          // additive glow
+gl.clearColor(0.012, 0.01, 0.032, 1.0);
+
+function mkBuf(data, usage) {
+  const b = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, data, usage);
+  return b;
+}
+
+const seeds = new Float32Array(N * 4);        // hue offset, size, twinkle phase, spare
+for (let i = 0; i < N; i++) {
+  seeds[i*4] = R1[i]; seeds[i*4+1] = R2[i]; seeds[i*4+2] = R3[i]; seeds[i*4+3] = R4[i];
+}
+const posBuf = mkBuf(pos, gl.DYNAMIC_DRAW);
+const seedBuf = mkBuf(seeds, gl.STATIC_DRAW);
+
+/* distant twinkle stars for parallax depth */
+const SN = 380;
+const starPos = new Float32Array(SN * 3), starSeed = new Float32Array(SN * 4);
+for (let i = 0; i < SN; i++) {
+  const a = Math.random() * TAU, c = Math.random() * 2 - 1;
+  const sq = Math.sqrt(1 - c * c), r = 26 + 36 * Math.random();
+  starPos[i*3] = Math.cos(a) * sq * r;
+  starPos[i*3+1] = c * r;
+  starPos[i*3+2] = Math.sin(a) * sq * r;
+  starSeed[i*4] = Math.random(); starSeed[i*4+1] = 0.3 + 0.7*Math.random();
+  starSeed[i*4+2] = Math.random(); starSeed[i*4+3] = Math.random();
+}
+const starPosBuf = mkBuf(starPos, gl.STATIC_DRAW);
+const starSeedBuf = mkBuf(starSeed, gl.STATIC_DRAW);
+
+/* =================== projection / resize =================== */
+const projM = new Float32Array(16);
+let distFactor = 1;
+function setProj(aspect) {
+  const f = 1 / Math.tan(21 * Math.PI / 180);           // 42 deg vertical fov
+  const near = 0.1, far = 100;
+  projM.fill(0);
+  projM[0] = f / aspect;
+  projM[5] = f;
+  projM[10] = -(far + near) / (far - near);
+  projM[11] = -1;
+  projM[14] = -(2 * far * near) / (far - near);
+  gl.uniformMatrix4fv(UL.uProj, false, projM);
+}
+let Wc = 0, Hc = 0;
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+  const h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+  if (w === Wc && h === Hc) return;
+  Wc = w; Hc = h;
+  canvas.width = w; canvas.height = h;
+  gl.viewport(0, 0, w, h);
+  setProj(w / h);
+  gl.uniform1f(UL.uScale, h / 380);
+  distFactor = Math.min(1.55, Math.max(1, 0.9 / (w / h)));  // pull back on narrow/portrait
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* =================== camera + input =================== */
+let camD = SCENES[0].cam.d, camEl = SCENES[0].cam.el, camSpin = SCENES[0].cam.spin;
+let camAz = 0.6, azUser = 0, elUser = 0, zoom = 1;
+let camFromD = camD, camFromEl = camEl, camFromSpin = camSpin;
+
+const ptrs = new Map();
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+});
+canvas.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId);
+  if (!p) return;
+  if (ptrs.size === 1) {
+    azUser += (e.clientX - p.x) * 0.0045;
+    elUser += (e.clientY - p.y) * 0.0045;
+    elUser = Math.max(-0.9, Math.min(0.9, elUser));
+    p.x = e.clientX; p.y = e.clientY;
+  } else if (ptrs.size === 2) {
+    const other = [...ptrs.values()].find(q => q !== p);
+    const d0 = Math.hypot(other.x - p.x, other.y - p.y) || 1;
+    p.x = e.clientX; p.y = e.clientY;
+    const d1 = Math.hypot(other.x - p.x, other.y - p.y) || 1;
+    zoom = Math.max(0.55, Math.min(2.0, zoom * d0 / d1));
+  }
+});
+const endPtr = e => ptrs.delete(e.pointerId);
+canvas.addEventListener('pointerup', endPtr);
+canvas.addEventListener('pointercancel', endPtr);
+window.addEventListener('wheel', e => {
+  zoom = Math.max(0.55, Math.min(2.0, zoom * Math.exp(-e.deltaY * 0.0012)));
+  e.preventDefault();
+}, { passive: false });
+
+/* =================== ui refs =================== */
+const introEl = document.getElementById('intro');
+const introSub = document.getElementById('introsub');
+const labelEl = document.getElementById('label');
+const snumEl = document.getElementById('snum');
+const snameEl = document.getElementById('sname');
+const chipEl = document.getElementById('chip');
+const fillEl = document.getElementById('fill');
+introSub.textContent = N.toLocaleString('en-US') + ' PARTICLES · A 40-SECOND SHOT · SEAMLESS LOOP';
+let introGone = false;
+
+/* =================== scene entry: snapshot + swirl vectors =================== */
+let lastScene = -1;
+let hueCur = SCENES[0].hue, huePrev = SCENES[0].hue;
+let simT = T0;                                 // simulation clock
+
+function enterScene(scene, tau) {
+  from.set(pos);
+  for (let i = 0; i < N; i++) {               // targets at entry, for travel vectors
+    shape(scene.id, i, simT, tau);
+    const j = i * 3;
+    tgt0[j] = OUT[0]; tgt0[j+1] = OUT[1]; tgt0[j+2] = OUT[2];
+  }
+  for (let i = 0; i < N; i++) {
+    const j = i * 3;
+    const fx = tgt0[j] - from[j], fy = tgt0[j+1] - from[j+1], fz = tgt0[j+2] - from[j+2];
+    const tl = Math.sqrt(fx*fx + fy*fy + fz*fz);
+    if (tl > 0.03) {                          // perpendicular swirl = comet arcs mid-flight
+      const ax = R2[i] - .5, ay = R3[i] - .5, az = R4[i] - .5;
+      const al = Math.sqrt(ax*ax + ay*ay + az*az) || 1;
+      const nx = ax/al, ny = ay/al, nz = az/al;
+      const cx = fy*nz - fz*ny, cy = fz*nx - fx*nz, cz = fx*ny - fy*nx;
+      const cl = Math.sqrt(cx*cx + cy*cy + cz*cz) || 1;
+      const mag = (R1[i] - .5) * 2 * scene.swirl;
+      sw[j] = cx/cl*mag; sw[j+1] = cy/cl*mag; sw[j+2] = cz/cl*mag;
+    } else {
+      sw[j] = 0; sw[j+1] = 0; sw[j+2] = 0;
+    }
+    delays[i] = scene.stagger * scene.trans * R3[i];
+  }
+  camFromD = camD; camFromEl = camEl; camFromSpin = camSpin;
+  huePrev = hueCur; hueCur = scene.hue;
+
+  snumEl.textContent = scene.num;
+  snameEl.textContent = scene.name;
+  chipEl.textContent = scene.mood === 'explosive'
+    ? 'EXPLOSIVE TRANSITION'
+    : scene.mood.toUpperCase() + ' TRANSITION';
+  document.documentElement.style.setProperty(
+    '--acc', 'hsl(' + Math.round(scene.hue * 360) + ',90%,62%)');
+  labelEl.classList.remove('anim');
+  void labelEl.offsetWidth;
+  labelEl.classList.add('anim');
+}
+
+/* =================== main loop =================== */
+let lastNow = performance.now();
+
+function frame(now) {
+  const dtms = Math.min(50, Math.max(0, now - lastNow));
+  lastNow = now;
+  const dt = dtms / 1000;
+  simT += dt;
+  camAz += camSpin * dt;
+
+  /* variable-length timeline inside the 40 s loop */
+  const tm = ((simT % LOOP_LEN) + LOOP_LEN) % LOOP_LEN;
+  let k = 0;
+  while (k < SCENES.length - 1 && tm >= STARTS[k + 1]) k++;
+  const scene = SCENES[k];
+  const tau = tm - STARTS[k];
+  if (k !== lastScene) { lastScene = k; enterScene(scene, tau); }
+
+  const trans = scene.trans;
+  const cp = ioCubic(Math.min(1, tau / trans));
+  camD = camFromD + (scene.cam.d - camFromD) * cp;
+  camEl = camFromEl + (scene.cam.el - camFromEl) * cp;
+  camSpin = camFromSpin + (scene.cam.spin - camFromSpin) * cp;
+
+  const blend = tau < trans;
+  const span = trans * (1 - scene.stagger);
+  const easeFn = EASES[scene.ease];
+
+  for (let i = 0; i < N; i++) {
+    shape(scene.id, i, simT, tau);
+    const j = i * 3;
+    if (blend) {
+      let p = (tau - delays[i]) / span;
+      if (p < 0) p = 0; else if (p > 1) p = 1;
+      const e = easeFn(p);
+      const wf = Math.sin(Math.PI * p);
+      pos[j]   = from[j]   + (OUT[0] - from[j])   * e + sw[j]   * wf;
+      pos[j+1] = from[j+1] + (OUT[1] - from[j+1]) * e + sw[j+1] * wf;
+      pos[j+2] = from[j+2] + (OUT[2] - from[j+2]) * e + sw[j+2] * wf;
+    } else {
+      pos[j] = OUT[0]; pos[j+1] = OUT[1]; pos[j+2] = OUT[2];
+    }
+  }
+
+  let bright = 1 + 0.06 * Math.sin(simT * 0.7);
+  if (scene.id === 'heart') bright = 1 + 0.6 * beat(simT);
+  else if (scene.id === 'nova') bright = 1.25 + 1.7 * Math.exp(-tau * 1.7);
+  const hm = blend ? cp : 1;
+
+  /* ---- render ---- */
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform1f(UL.uTime, simT);
+  gl.uniform1f(UL.uAz, camAz + azUser);
+  gl.uniform1f(UL.uEl, Math.max(-0.15, Math.min(1.45, camEl + elUser)));
+  gl.uniform1f(UL.uDist, camD * zoom * distFactor);
+
+  // background stars
+  gl.bindBuffer(gl.ARRAY_BUFFER, starPosBuf);
+  gl.vertexAttribPointer(APOS, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, starSeedBuf);
+  gl.vertexAttribPointer(ASEED, 4, gl.FLOAT, false, 0, 0);
+  gl.uniform1f(UL.uHueA, 0.6); gl.uniform1f(UL.uHueB, 0.6); gl.uniform1f(UL.uHueMix, 1);
+  gl.uniform1f(UL.uSat, 0.4); gl.uniform1f(UL.uLight, 0.8);
+  gl.uniform1f(UL.uBright, 0.7); gl.uniform1f(UL.uSize, 3.2);
+  gl.drawArrays(gl.POINTS, 0, SN);
+
+  // main swarm
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+  gl.vertexAttribPointer(APOS, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, seedBuf);
+  gl.vertexAttribPointer(ASEED, 4, gl.FLOAT, false, 0, 0);
+  gl.uniform1f(UL.uHueA, huePrev); gl.uniform1f(UL.uHueB, hueCur); gl.uniform1f(UL.uHueMix, hm);
+  gl.uniform1f(UL.uSat, 0.9); gl.uniform1f(UL.uLight, 0.58);
+  gl.uniform1f(UL.uBright, bright); gl.uniform1f(UL.uSize, scene.size);
+  gl.drawArrays(gl.POINTS, 0, N);
+
+  /* ---- ui ---- */
+  fillEl.style.width = ((simT % LOOP_LEN) / LOOP_LEN * 100).toFixed(2) + '%';
+  if (!introGone && simT > 3.0) { introGone = true; introEl.classList.add('gone'); }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
