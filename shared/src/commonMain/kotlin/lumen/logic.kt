@@ -169,15 +169,21 @@ fun incomeOf(S: GameState, tNow: Double): Double =
         prismMult(S.ref) *
         momentumMult(S, tNow)
 
-/* requirement to unlock the NEXT shape = reqBase * product(owned shape bonuses)^reqExp */
-fun reqFor(shapesOwned: Int): Double {
+/* requirement to unlock the NEXT shape.
+   - shapeMult^reqExp matches how equilibrium income grows with the shape stack
+   - prismMult(refraction) matches the persistent prism-shop stack that
+     multiplies every run; it appears on both sides of the effort equation,
+     cancelling out, which keeps every gather a similar relative effort
+     across the whole arc instead of collapsing to seconds late-game */
+fun reqFor(S: GameState): Double {
     val last = SHAPES.size - 1
-    return if (shapesOwned >= last) {
-        val over = shapesOwned - last + 1
+    val base = if (S.shapes >= last) {
+        val over = S.shapes - last + 1
         Bal.reqBase * shapeMult(last).pow(Bal.reqExp) * 10.0.pow(over)
     } else {
-        Bal.reqBase * shapeMult(shapesOwned).pow(Bal.reqExp)
+        Bal.reqBase * shapeMult(S.shapes).pow(Bal.reqExp)
     }
+    return base * prismMult(S.ref)
 }
 
 /* exact integer floor cube root (pow alone can miss exact cubes) */
@@ -241,7 +247,7 @@ fun buyBand(S: GameState, b: Int): Int {
     return 1
 }
 
-fun canGather(S: GameState): Boolean = S.runEarned >= reqFor(S.shapes)
+fun canGather(S: GameState): Boolean = S.runEarned >= reqFor(S)
 
 /* the prestige: reforge the swarm into the next shape; returns prisms gained */
 fun doGather(S: GameState): Int {

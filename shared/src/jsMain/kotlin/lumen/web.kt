@@ -889,7 +889,7 @@ private fun refreshUI() {
                 " · shapes bonus " + fmtMult(shapeMult(S.shapes))
         val nk = min(S.shapes + 1, SHAPES.size - 1)
         val nx = SHAPES[nk]
-        val req = reqFor(S.shapes)
+        val req = reqFor(S)
         E("nextName").textContent = nx.name
         E("nextSub").textContent = nx.sub + " · " + fmtMult(nx.mult)
         val pg = if (req > 0.0) min(1.0, S.runEarned / req) else 0.0
