@@ -297,12 +297,12 @@
     var n = S.v7_1;
     return tmp * Math.pow(1.25, n) * shapeMult(S.x7_1) * spectrumMult(S.w7_1) * prismMult(S.z7_1) * momentumMult(S, tNow);
   }
-  function reqFor(shapesOwned) {
+  function reqFor(S) {
     _init_properties_logic_kt__ty2k8k();
     var last = get_SHAPES().h() - 1 | 0;
     var tmp;
-    if (shapesOwned >= last) {
-      var over = (shapesOwned - last | 0) + 1 | 0;
+    if (S.x7_1 >= last) {
+      var over = (S.x7_1 - last | 0) + 1 | 0;
       // Inline function 'kotlin.math.pow' call
       var this_0 = shapeMult(last);
       var tmp_0 = 30000.0 * Math.pow(this_0, 1.4);
@@ -310,10 +310,11 @@
       tmp = tmp_0 * Math.pow(10.0, over);
     } else {
       // Inline function 'kotlin.math.pow' call
-      var this_1 = shapeMult(shapesOwned);
+      var this_1 = shapeMult(S.x7_1);
       tmp = 30000.0 * Math.pow(this_1, 1.4);
     }
-    return tmp;
+    var base = tmp;
+    return base * prismMult(S.z7_1);
   }
   function intCubeRoot(v) {
     _init_properties_logic_kt__ty2k8k();
@@ -395,7 +396,7 @@
   }
   function canGather(S) {
     _init_properties_logic_kt__ty2k8k();
-    return S.s7_1 >= reqFor(S.x7_1);
+    return S.s7_1 >= reqFor(S);
   }
   function doGather(S) {
     _init_properties_logic_kt__ty2k8k();
@@ -2133,7 +2134,7 @@
       var b_1 = get_SHAPES().h() - 1 | 0;
       var nk = Math.min(tmp10, b_1);
       var nx = get_SHAPES().i(nk);
-      var req = reqFor(get_S().x7_1);
+      var req = reqFor(get_S());
       E('nextName').textContent = nx.o7_1;
       E('nextSub').textContent = nx.p7_1 + ' \xB7 ' + fmtMult(nx.q7_1);
       var tmp_1;
