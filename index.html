@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05040a">
+<title>FLUTTERLIGHT — Kotlin particle idle game</title>
+<style>
+  :root { --acc: hsl(190,90%,62%); --panel: rgba(8,7,16,.82); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; background:#05040a;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  body { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:#cfd6e4; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+
+  #vig { position:fixed; inset:0; pointer-events:none; z-index:1;
+    background: radial-gradient(ellipse at 50% 38%, transparent 45%, rgba(2,2,8,.66) 100%); }
+
+  /* hud */
+  #hud { position:fixed; top:0; left:0; right:0; padding:14px 16px 0; z-index:5;
+    display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; }
+  .lab { font-size:9px; letter-spacing:.3em; color:rgba(220,230,255,.45); }
+  #lightVal { font-size:clamp(22px,7vw,40px); font-weight:300; color:#f4f7ff; letter-spacing:.04em;
+    text-shadow:0 0 18px rgba(140,190,255,.35); }
+  #lightRate { font-size:11px; letter-spacing:.14em; color:var(--acc); margin-top:2px; }
+  #right { text-align:right; }
+  #prismVal { font-size:clamp(15px,4.6vw,22px); font-weight:300; color:#e8f2ff; }
+  #sysBtns { margin-top:8px; pointer-events:auto; }
+  .mini { display:inline-block; margin-left:6px; padding:4px 9px; font-size:9px; letter-spacing:.22em;
+    color:rgba(220,230,255,.55); border:1px solid rgba(255,255,255,.14); border-radius:999px;
+    background:transparent; font-family:inherit; }
+  .mini:active { background:rgba(255,255,255,.08); }
+
+  /* ceremony caption */
+  #cer { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:10px; z-index:6; pointer-events:none; opacity:0;
+    transition:opacity .5s ease; }
+  #cer.on { opacity:1; }
+  #cerName { font-size:clamp(22px,7.5vw,52px); font-weight:300; letter-spacing:.42em; text-indent:.42em;
+    color:#fff; text-shadow:0 0 34px rgba(160,210,255,.5); }
+  #cerSub { font-size:clamp(10px,2.6vw,14px); letter-spacing:.3em; color:var(--acc); }
+
+  /* bottom panel */
+  #tabs { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex;
+    background:rgba(6,5,12,.92); border-top:1px solid rgba(255,255,255,.07);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  #tabs button { flex:1; padding:12px 4px 10px; background:none; border:none; color:rgba(220,230,255,.5);
+    font-family:inherit; font-size:10px; letter-spacing:.24em; }
+  #tabs button.on { color:var(--acc); box-shadow:inset 0 -2px 0 var(--acc); }
+  #panel { position:fixed; left:0; right:0; bottom:41px; z-index:7; max-height:44vh; overflow-y:auto;
+    background:var(--panel); border-top:1px solid rgba(255,255,255,.06);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    padding:12px 14px 16px; touch-action:pan-y; display:none; }
+  #panel.on { display:block; }
+
+  .sect { margin-bottom:14px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 2px; border-bottom:1px solid rgba(255,255,255,.05); }
+  .row:last-child { border-bottom:none; }
+  .who { flex:1; min-width:0; }
+  .who b { display:block; font-weight:400; font-size:12px; letter-spacing:.18em; color:#f0f4ff; }
+  .who span { display:block; font-size:9px; letter-spacing:.12em; color:rgba(220,230,255,.45); margin-top:3px; }
+  .buy { flex:none; padding:8px 13px; border-radius:999px; border:1px solid var(--acc);
+    color:var(--acc); background:transparent; font-family:inherit; font-size:10px;
+    letter-spacing:.16em; white-space:nowrap; }
+  .buy:disabled { border-color:rgba(255,255,255,.12); color:rgba(220,230,255,.28); }
+  .buy:active:not(:disabled) { background:rgba(255,255,255,.09); }
+  .buy .cost { display:block; font-size:8px; letter-spacing:.08em; color:rgba(220,230,255,.55); margin-top:2px; }
+  .btnrow { display:flex; gap:6px; }
+
+  .bar { height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; margin:6px 0; }
+  .bar i { display:block; height:100%; background:var(--acc); box-shadow:0 0 10px var(--acc); }
+
+  .bigbtn { width:100%; padding:14px; margin-top:10px; border-radius:12px; border:1px solid var(--acc);
+    color:#fff; background:rgba(120,180,255,.12); font-family:inherit; font-size:12px; letter-spacing:.3em; }
+  .bigbtn:disabled { border-color:rgba(255,255,255,.1); color:rgba(220,230,255,.3); background:transparent; }
+  .bigbtn:active:not(:disabled) { background:rgba(120,180,255,.25); }
+
+  .pips { display:inline-flex; gap:3px; margin-left:6px; vertical-align:middle; }
+  .pips i { width:7px; height:7px; border-radius:50%; border:1px solid rgba(255,255,255,.25); }
+  .pips i.f { background:var(--acc); border-color:var(--acc); box-shadow:0 0 6px var(--acc); }
+
+  .mus { font-size:9px; letter-spacing:.1em; color:rgba(220,230,255,.4); margin:4px 0 12px; }
+  .musrow { display:flex; justify-content:space-between; padding:7px 2px; font-size:10px;
+    letter-spacing:.14em; border-bottom:1px solid rgba(255,255,255,.05); }
+  .musrow .got { color:var(--acc); }
+  .musrow .lock { color:rgba(220,230,255,.25); }
+
+  /* toasts */
+  #toasts { position:fixed; top:calc(14px + 6vh); left:50%; transform:translateX(-50%); z-index:20;
+    display:flex; flex-direction:column; gap:6px; align-items:center; pointer-events:none; width:86vw; }
+  .toast { padding:8px 16px; border-radius:999px; background:rgba(10,9,20,.9);
+    border:1px solid var(--acc); color:#f0f5ff; font-size:10px; letter-spacing:.22em; text-align:center;
+    animation:toastIn .45s cubic-bezier(.2,.9,.25,1) both; }
+  .toast.bye { opacity:0; transition:opacity .8s ease; }
+  @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
+
+  #hint { position:fixed; right:14px; bottom:calc(52px + env(safe-area-inset-bottom,0px)); z-index:5;
+    font-size:9px; letter-spacing:.22em; color:rgba(220,230,255,.32); pointer-events:none; }
+
+  #fallback { position:fixed; inset:0; display:none; place-items:center; z-index:9;
+    font-size:13px; letter-spacing:.12em; color:#c9d4ea; }
+
+  /* opening card */
+  #intro { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px; pointer-events:none;
+    opacity:0; animation: introIn 1.3s ease .45s forwards; }
+  #intro.gone { opacity:0; transition:opacity 1.2s ease; animation:none; }
+  #intro h1 { font-weight:300; text-align:center; color:#f3f6ff;
+    font-size:clamp(20px,6vw,56px); letter-spacing:.42em; text-indent:.42em;
+    text-shadow:0 0 26px rgba(120,180,255,.38); }
+  #intro p { font-size:clamp(9px,2.3vw,13px); letter-spacing:.3em; color:var(--acc); opacity:.9; }
+  @keyframes introIn { to { opacity:1; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+
+<div id="intro">
+  <h1>FLUTTERLIGHT</h1>
+  <p id="introsub">15,000 PARTICLES · A PARTICLE IDLE GAME · BUILT WITH KOTLIN</p>
+</div>
+
+<div id="hud">
+  <div class="col">
+    <div class="lab">LIGHT</div>
+    <div id="lightVal">0</div>
+    <div id="lightRate">0 /s</div>
+  </div>
+  <div class="col" id="right">
+    <div class="lab">PRISMS</div>
+    <div id="prismVal">—</div>
+    <div id="sysBtns">
+      <button class="mini" id="saveBtn">SAVE</button>
+      <button class="mini" id="wipeBtn">WIPE</button>
+    </div>
+  </div>
+</div>
+
+<div id="cer"><div id="cerName"></div><div id="cerSub"></div></div>
+<div id="toasts"></div>
+
+<div id="panel">
+  <section id="tab-swarm" class="sect">
+    <div class="row">
+      <div class="who"><b>PARTICLES <span id="pCount">10</span></b><span id="pInfo"></span></div>
+      <div class="btnrow">
+        <button class="buy" id="bp1">+1<span class="cost" id="bp1c"></span></button>
+        <button class="buy" id="bp10">+10<span class="cost" id="bp10c"></span></button>
+        <button class="buy" id="bpMax">MAX<span class="cost" id="bpMaxc"></span></button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="who"><b>LIGHT LEVEL <span id="lCount">0</span></b><span id="lInfo"></span></div>
+      <div class="btnrow">
+        <button class="buy" id="bl1">+1<span class="cost" id="bl1c"></span></button>
+        <button class="buy" id="blMax">MAX<span class="cost" id="blMaxc"></span></button>
+      </div>
+    </div>
+    <div class="mus" id="prodBreak"></div>
+  </section>
+
+  <section id="tab-spectrum" class="sect" style="display:none">
+    <div class="mus">each band level: ×1.10 all production · completing a band grants a free light level · your hue = your spectrum</div>
+    <div id="bandRows"></div>
+  </section>
+
+  <section id="tab-gather" class="sect" style="display:none">
+    <div class="mus" id="curShape"></div>
+    <div class="row">
+      <div class="who"><b id="nextName">TRIANGLE</b><span id="nextSub"></span></div>
+      <div class="who" style="text-align:right"><span id="nextPrisms"></span></div>
+    </div>
+    <div class="bar"><i id="nextBar" style="width:0%"></i></div>
+    <div class="mus" id="nextReq"></div>
+    <button class="bigbtn" id="gatherBtn">GATHER</button>
+    <div class="mus" style="margin-top:14px" id="museum"></div>
+  </section>
+
+  <section id="tab-prism" class="sect" style="display:none">
+    <div class="mus" id="prismNote"></div>
+    <div id="shopRows"></div>
+  </section>
+</div>
+
+<div id="tabs">
+  <button data-t="swarm" class="on">SWARM</button>
+  <button data-t="spectrum">SPECTRUM</button>
+  <button data-t="gather">GATHER</button>
+  <button data-t="prism">PRISMS</button>
+</div>
+<div id="hint">TAP SWARM TO INSPIRE</div>
+<div id="fallback">WEBGL IS NOT AVAILABLE IN THIS BROWSER.</div>
+
+<script>
+  /* tiny bootstrap: typed-array factory for the Kotlin/JS side */
+  window.__mk = function (n) { return new Float32Array(n); };
+</script>
+<script src="shared.js"></script>
+</body>
+</html>
