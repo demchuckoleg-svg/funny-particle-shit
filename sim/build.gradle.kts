@@ -1,12 +1,17 @@
 plugins {
-    kotlin("jvm")
-    application
+    kotlin("multiplatform")
 }
 
-dependencies {
-    implementation(project(":shared"))
-}
-
-application {
-    mainClass.set("lumen.SimKt")
+kotlin {
+    js(IR) {
+        nodejs { }
+        binaries.executable()
+    }
+    sourceSets {
+        val jsMain by getting {
+            dependencies {
+                implementation(project(":shared"))
+            }
+        }
+    }
 }

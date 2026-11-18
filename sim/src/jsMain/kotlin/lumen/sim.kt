@@ -67,6 +67,9 @@ private fun spendPrisms(S: GameState) {
     while (S.ref < Bal.refMax && shopCost("ref", S.ref) in 0.0..S.prisms.toDouble()) buyShop(S, "ref")
 }
 
+/* a wall-clock helper for node (JS-only source set) */
+private fun nowMs(): Double = js("Date.now()")
+
 fun main() {
     val S = GameState()
     var t = 0.0
@@ -76,7 +79,7 @@ fun main() {
     val times = ArrayList<Double>()
     val prismsAt = ArrayList<Int>()
     val incomeAt = ArrayList<Double>()
-    val wallStart = System.currentTimeMillis()
+    val wallStart = nowMs()
 
     while (t < horizon) {
         S.t = t
@@ -97,7 +100,7 @@ fun main() {
         }
         t += dt
     }
-    val wallMs = System.currentTimeMillis() - wallStart
+    val wallMs = (nowMs() - wallStart).toInt()
 
     println("=== FLUTTERLIGHT balance simulation (greedy bot, 1 s ticks) ===")
     println()

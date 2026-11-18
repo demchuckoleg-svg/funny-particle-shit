@@ -11,6 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -26,8 +27,8 @@ jobs:
       - name: Build playable game (Kotlin/JS)
         run: gradle --no-daemon :shared:jsBrowserProductionWebpack
 
-      - name: Compile and run balance simulation (Kotlin/JVM)
-        run: gradle --no-daemon :sim:run
+      - name: Compile and run balance simulation (Kotlin/JS under node)
+        run: gradle --no-daemon :sim:jsNodeRun
 
       - name: Stage web bundle
         run: |
