@@ -31,8 +31,10 @@ jobs:
           set -x
           curl -fL --retry 3 --max-time 180 -o kotlin-compiler.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-compiler/2.1.20/kotlin-compiler-2.1.20.jar
           curl -fL --retry 3 --max-time 120 -o kotlin-stdlib.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.1.20/kotlin-stdlib-2.1.20.jar
-          ls -la kotlin-compiler.jar kotlin-stdlib.jar
-          java -Xmx2g -cp "kotlin-compiler.jar:kotlin-stdlib.jar" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+          curl -fL --retry 3 --max-time 120 -o kotlin-reflect.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-reflect/2.1.20/kotlin-reflect-2.1.20.jar
+          curl -fL --retry 3 --max-time 120 -o kotlinx-coroutines-core-jvm.jar https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.1/kotlinx-coroutines-core-jvm-1.8.1.jar
+          ls -la *.jar
+          java -Xmx2g -cp "kotlin-compiler.jar:kotlin-stdlib.jar:kotlin-reflect.jar:kotlinx-coroutines-core-jvm.jar" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
             shared/src/commonMain/kotlin/lumen/logic.kt shared/src/jvmMain/kotlin/lumen/sim.kt \
             -include-runtime -d sim.jar
           ls -la sim.jar
