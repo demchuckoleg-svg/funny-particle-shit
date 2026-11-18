@@ -28,7 +28,7 @@ jobs:
         run: gradle --no-daemon :shared:jsBrowserProductionWebpack
 
       - name: Compile and run balance simulation (Kotlin/JS under node)
-        run: gradle --no-daemon :sim:jsNodeRun
+        run: gradle --no-daemon :sim:jsNodeProductionRun
 
       - name: Stage web bundle
         run: |
