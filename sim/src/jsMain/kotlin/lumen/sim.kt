@@ -21,33 +21,55 @@ private fun greedyBuy(S: GameState) {
     var inc = incomeOf(S, S.t)
     var buys = 0
     while (buys < 500) {
+        var bestPb = Double.MAX_VALUE
+        var kind = -1
+        var bandIdx = -1
+
         val cP = particleCost(S.P)
-        val gainP = if (S.P > 0) inc / S.P else inc
-        val pbP = if (gainP > 0.0) cP / gainP else 1e18
+        if (S.P < Bal.PCAP && cP <= S.light) {
+            val gainP = if (S.P > 0) inc / S.P else inc
+            if (gainP > 0.0) { val pb = cP / gainP; if (pb < bestPb) { bestPb = pb; kind = 0 } }
+        }
         val cL = lightCost(S.L)
-        val gainL = 0.25 * inc
-        val pbL = if (gainL > 0.0) cL / gainL else 1e18
-        var bb = -1
-        var cB = Double.MAX_VALUE
+        if (S.L < Bal.LCAP && cL <= S.light) {
+            val gainL = 0.25 * inc
+            if (gainL > 0.0) { val pb = cL / gainL; if (pb < bestPb) { bestPb = pb; kind = 1 } }
+        }
+        var bestBandCost = Double.MAX_VALUE
         for (b in 0..6) {
             if (S.bands[b] >= Bal.bandMaxLvl) continue
             val c = bandCost(b, S.bands[b])
-            if (c < cB) { cB = c; bb = b }
+            if (c < bestBandCost) { bestBandCost = c; bandIdx = b }
         }
-        val gainB = 0.10 * inc
-        val pbB = if (bb >= 0 && gainB > 0.0) cB / gainB else 1e18
+        if (bandIdx >= 0 && bestBandCost <= S.light) {
+            val gainB = 0.10 * inc
+            if (gainB > 0.0) { val pb = bestBandCost / gainB; if (pb < bestPb) { bestPb = pb; kind = 2 } }
+        }
 
-        var acted = false
-        if (pbP <= pbL && pbP <= pbB && cP <= S.light && S.P < Bal.PCAP) {
-            buyParticles(S, 1); acted = true
-        } else if (pbL <= pbP && pbL <= pbB && cL <= S.light && S.L < Bal.LCAP) {
-            buyLight(S, 1); acted = true
-        } else if (pbB <= pbP && pbB <= pbL && bb >= 0 && cB <= S.light) {
-            buyBand(S, bb); acted = true
+        when (kind) {
+            0 -> buyParticles(S, 1)
+            1 -> buyLight(S, 1)
+            2 -> buyBand(S, bandIdx)
         }
-        if (!acted) break
+        if (kind < 0) break
         inc = incomeOf(S, S.t)
         buys++
+    }
+}
+
+/* buy repeatedly while the next level is affordable within maxCost — always terminates */
+private fun buyWhile(S: GameState, kind: String, maxCost: Double) {
+    while (true) {
+        val lvl = when (kind) {
+            "ref" -> S.ref
+            "head" -> S.head
+            "after" -> S.after
+            "mom" -> S.mom
+            else -> return
+        }
+        val c = shopCost(kind, lvl)
+        if (c < 0.0 || c > maxCost || c > S.prisms) return
+        if (!buyShop(S, kind)) return
     }
 }
 
@@ -56,15 +78,15 @@ private fun spendPrisms(S: GameState) {
     buyAuto(S, "autoL")
     buyAuto(S, "autoS")
     if (S.after < 1) buyShop(S, "after")
-    while (S.ref < Bal.refMax && shopCost("ref", S.ref) in 0.0..(S.prisms / 2.0)) buyShop(S, "ref")
-    while (S.head < Bal.headMax && shopCost("head", S.head) in 0.0..30.0) buyShop(S, "head")
+    buyWhile(S, "ref", S.prisms / 2.0)
+    buyWhile(S, "head", 30.0)
     if (S.after < 2) buyShop(S, "after")
     if (S.mom < 1) buyShop(S, "mom")
     if (S.after < 3) buyShop(S, "after")
     if (S.mom < 2) buyShop(S, "mom")
     if (S.after < 4) buyShop(S, "after")
     if (S.mom < 3) buyShop(S, "mom")
-    while (S.ref < Bal.refMax && shopCost("ref", S.ref) in 0.0..S.prisms.toDouble()) buyShop(S, "ref")
+    buyWhile(S, "ref", S.prisms.toDouble())
 }
 
 /* a wall-clock helper for node (JS-only source set) */
