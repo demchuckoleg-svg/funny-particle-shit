@@ -14,33 +14,34 @@
   //region block: imports
   var imul = Math.imul;
   var log10 = Math.log10;
-  var protoOf = kotlin_kotlin.$_$.p;
-  var initMetadataForObject = kotlin_kotlin.$_$.n;
-  var getStringHashCode = kotlin_kotlin.$_$.l;
-  var getNumberHashCode = kotlin_kotlin.$_$.k;
-  var THROW_CCE = kotlin_kotlin.$_$.x;
-  var equals = kotlin_kotlin.$_$.j;
-  var initMetadataForClass = kotlin_kotlin.$_$.m;
-  var numberToInt = kotlin_kotlin.$_$.o;
-  var Unit_instance = kotlin_kotlin.$_$.f;
-  var StringBuilder = kotlin_kotlin.$_$.r;
-  var _Char___init__impl__6a9atx = kotlin_kotlin.$_$.d;
-  var startsWith = kotlin_kotlin.$_$.t;
-  var split = kotlin_kotlin.$_$.s;
-  var toDouble = kotlin_kotlin.$_$.u;
-  var toInt = kotlin_kotlin.$_$.v;
-  var Exception = kotlin_kotlin.$_$.w;
-  var roundToInt = kotlin_kotlin.$_$.q;
-  var isInfinite = kotlin_kotlin.$_$.y;
-  var isNaN_0 = kotlin_kotlin.$_$.z;
-  var listOf = kotlin_kotlin.$_$.h;
-  var HashMap_init_$Create$ = kotlin_kotlin.$_$.b;
-  var Default_getInstance = kotlin_kotlin.$_$.e;
-  var arrayCopy = kotlin_kotlin.$_$.g;
-  var to = kotlin_kotlin.$_$.a1;
-  var mapOf = kotlin_kotlin.$_$.i;
-  var StringBuilder_init_$Create$ = kotlin_kotlin.$_$.c;
-  var ArrayList_init_$Create$ = kotlin_kotlin.$_$.a;
+  var protoOf = kotlin_kotlin.$_$.q;
+  var initMetadataForObject = kotlin_kotlin.$_$.o;
+  var VOID = kotlin_kotlin.$_$.a;
+  var getStringHashCode = kotlin_kotlin.$_$.m;
+  var getNumberHashCode = kotlin_kotlin.$_$.l;
+  var THROW_CCE = kotlin_kotlin.$_$.y;
+  var equals = kotlin_kotlin.$_$.k;
+  var initMetadataForClass = kotlin_kotlin.$_$.n;
+  var numberToInt = kotlin_kotlin.$_$.p;
+  var Unit_instance = kotlin_kotlin.$_$.g;
+  var StringBuilder = kotlin_kotlin.$_$.s;
+  var _Char___init__impl__6a9atx = kotlin_kotlin.$_$.e;
+  var startsWith = kotlin_kotlin.$_$.u;
+  var split = kotlin_kotlin.$_$.t;
+  var toDouble = kotlin_kotlin.$_$.v;
+  var toInt = kotlin_kotlin.$_$.w;
+  var Exception = kotlin_kotlin.$_$.x;
+  var roundToInt = kotlin_kotlin.$_$.r;
+  var isInfinite = kotlin_kotlin.$_$.z;
+  var isNaN_0 = kotlin_kotlin.$_$.a1;
+  var listOf = kotlin_kotlin.$_$.i;
+  var HashMap_init_$Create$ = kotlin_kotlin.$_$.c;
+  var Default_getInstance = kotlin_kotlin.$_$.f;
+  var arrayCopy = kotlin_kotlin.$_$.h;
+  var to = kotlin_kotlin.$_$.b1;
+  var mapOf = kotlin_kotlin.$_$.j;
+  var StringBuilder_init_$Create$ = kotlin_kotlin.$_$.d;
+  var ArrayList_init_$Create$ = kotlin_kotlin.$_$.b;
   //endregion
   //region block: pre-declaration
   initMetadataForObject(Bal, 'Bal');
@@ -111,20 +112,23 @@
       new Bal();
     return Bal_instance;
   }
-  function Shape(key, name, sub, mult) {
+  function Shape(key, name, sub, mult, reqMult) {
+    reqMult = reqMult === VOID ? 1.0 : reqMult;
     this.n7_1 = key;
     this.o7_1 = name;
     this.p7_1 = sub;
     this.q7_1 = mult;
+    this.r7_1 = reqMult;
   }
   protoOf(Shape).toString = function () {
-    return 'Shape(key=' + this.n7_1 + ', name=' + this.o7_1 + ', sub=' + this.p7_1 + ', mult=' + this.q7_1 + ')';
+    return 'Shape(key=' + this.n7_1 + ', name=' + this.o7_1 + ', sub=' + this.p7_1 + ', mult=' + this.q7_1 + ', reqMult=' + this.r7_1 + ')';
   };
   protoOf(Shape).hashCode = function () {
     var result = getStringHashCode(this.n7_1);
     result = imul(result, 31) + getStringHashCode(this.o7_1) | 0;
     result = imul(result, 31) + getStringHashCode(this.p7_1) | 0;
     result = imul(result, 31) + getNumberHashCode(this.q7_1) | 0;
+    result = imul(result, 31) + getNumberHashCode(this.r7_1) | 0;
     return result;
   };
   protoOf(Shape).equals = function (other) {
@@ -141,29 +145,31 @@
       return false;
     if (!equals(this.q7_1, tmp0_other_with_cast.q7_1))
       return false;
+    if (!equals(this.r7_1, tmp0_other_with_cast.r7_1))
+      return false;
     return true;
   };
   function GameState() {
-    this.r7_1 = 0.0;
     this.s7_1 = 0.0;
     this.t7_1 = 0.0;
-    this.u7_1 = 10;
-    this.v7_1 = 0;
-    this.w7_1 = new Int32Array(7);
-    this.x7_1 = 0;
+    this.u7_1 = 0.0;
+    this.v7_1 = 10;
+    this.w7_1 = 0;
+    this.x7_1 = new Int32Array(7);
     this.y7_1 = 0;
     this.z7_1 = 0;
     this.a8_1 = 0;
     this.b8_1 = 0;
     this.c8_1 = 0;
-    this.d8_1 = false;
+    this.d8_1 = 0;
     this.e8_1 = false;
     this.f8_1 = false;
-    this.g8_1 = 0.0;
+    this.g8_1 = false;
     this.h8_1 = 0.0;
     this.i8_1 = 0.0;
     this.j8_1 = 0.0;
-    this.k8_1 = 0;
+    this.k8_1 = 0.0;
+    this.l8_1 = 0;
   }
   function particleCost(P) {
     _init_properties_logic_kt__ty2k8k();
@@ -284,25 +290,26 @@
   }
   function momentumMult(S, tNow) {
     _init_properties_logic_kt__ty2k8k();
-    if (S.c8_1 <= 0)
+    if (S.d8_1 <= 0)
       return 1.0;
-    var mins = (tNow - S.h8_1) / 60.0;
-    var cap = Bal_getInstance().k7_1[S.c8_1 - 1 | 0];
+    var mins = (tNow - S.i8_1) / 60.0;
+    var cap = Bal_getInstance().k7_1[S.d8_1 - 1 | 0];
     return 1.0 + 0.02 * (mins < cap ? mins : cap);
   }
   function incomeOf(S, tNow) {
     _init_properties_logic_kt__ty2k8k();
-    var tmp = S.u7_1 * 1.0;
+    var tmp = S.v7_1 * 1.0;
     // Inline function 'kotlin.math.pow' call
-    var n = S.v7_1;
-    return tmp * Math.pow(1.25, n) * shapeMult(S.x7_1) * spectrumMult(S.w7_1) * prismMult(S.z7_1) * momentumMult(S, tNow);
+    var n = S.w7_1;
+    return tmp * Math.pow(1.25, n) * shapeMult(S.y7_1) * spectrumMult(S.x7_1) * prismMult(S.a8_1) * momentumMult(S, tNow);
   }
   function reqFor(S) {
     _init_properties_logic_kt__ty2k8k();
     var last = get_SHAPES().h() - 1 | 0;
+    var nextK = S.y7_1 >= last ? last : S.y7_1 + 1 | 0;
     var tmp;
-    if (S.x7_1 >= last) {
-      var over = (S.x7_1 - last | 0) + 1 | 0;
+    if (S.y7_1 >= last) {
+      var over = (S.y7_1 - last | 0) + 1 | 0;
       // Inline function 'kotlin.math.pow' call
       var this_0 = shapeMult(last);
       var tmp_0 = 30000.0 * Math.pow(this_0, 1.4);
@@ -310,11 +317,11 @@
       tmp = tmp_0 * Math.pow(10.0, over);
     } else {
       // Inline function 'kotlin.math.pow' call
-      var this_1 = shapeMult(S.x7_1);
+      var this_1 = shapeMult(S.y7_1);
       tmp = 30000.0 * Math.pow(this_1, 1.4);
     }
     var base = tmp;
-    return base * prismMult(S.z7_1);
+    return base * prismMult(S.a8_1) * get_SHAPES().i(nextK).r7_1;
   }
   function intCubeRoot(v) {
     _init_properties_logic_kt__ty2k8k();
@@ -326,10 +333,12 @@
     var k = numberToInt(tmp$ret$0);
     if (k < 1)
       k = 1;
+    if (k > 2000000000)
+      k = 2000000000;
     while (k > 1 && k * k * k > v) {
       k = k - 1 | 0;
     }
-    while ((k + 1 | 0) * (k + 1 | 0) * (k + 1 | 0) <= v) {
+    while (k < 2000000000 && (k + 1 | 0) * (k + 1 | 0) * (k + 1 | 0) <= v) {
       k = k + 1 | 0;
     }
     return k;
@@ -341,54 +350,54 @@
   function buyParticles(S, n) {
     _init_properties_logic_kt__ty2k8k();
     var want = n;
-    var room = 6000 - S.u7_1 | 0;
+    var room = 6000 - S.v7_1 | 0;
     if (want > room)
       want = room;
     if (want <= 0)
       return 0;
-    var c = bulkParticleCost(S.u7_1, want);
-    if (S.r7_1 < c) {
-      want = maxParticlesAfford(S.u7_1, S.r7_1);
+    var c = bulkParticleCost(S.v7_1, want);
+    if (S.s7_1 < c) {
+      want = maxParticlesAfford(S.v7_1, S.s7_1);
       if (want <= 0)
         return 0;
-      c = bulkParticleCost(S.u7_1, want);
+      c = bulkParticleCost(S.v7_1, want);
     }
-    S.r7_1 = S.r7_1 - c;
-    S.u7_1 = S.u7_1 + want | 0;
+    S.s7_1 = S.s7_1 - c;
+    S.v7_1 = S.v7_1 + want | 0;
     return want;
   }
   function buyLight(S, n) {
     _init_properties_logic_kt__ty2k8k();
     var want = n;
-    var room = 300 - S.v7_1 | 0;
+    var room = 300 - S.w7_1 | 0;
     if (want > room)
       want = room;
     if (want <= 0)
       return 0;
-    var c = bulkLightCost(S.v7_1, want);
-    if (S.r7_1 < c) {
-      want = maxLightAfford(S.v7_1, S.r7_1);
+    var c = bulkLightCost(S.w7_1, want);
+    if (S.s7_1 < c) {
+      want = maxLightAfford(S.w7_1, S.s7_1);
       if (want <= 0)
         return 0;
-      c = bulkLightCost(S.v7_1, want);
+      c = bulkLightCost(S.w7_1, want);
     }
-    S.r7_1 = S.r7_1 - c;
-    S.v7_1 = S.v7_1 + want | 0;
+    S.s7_1 = S.s7_1 - c;
+    S.w7_1 = S.w7_1 + want | 0;
     return want;
   }
   function buyBand(S, b) {
     _init_properties_logic_kt__ty2k8k();
-    var l = S.w7_1[b];
+    var l = S.x7_1[b];
     if (l >= 5)
       return 0;
     var c = bandCost(b, l);
-    if (S.r7_1 < c)
+    if (S.s7_1 < c)
       return 0;
-    S.r7_1 = S.r7_1 - c;
-    S.w7_1[b] = l + 1 | 0;
-    if (S.w7_1[b] === 5) {
-      if (S.v7_1 < 300) {
-        S.v7_1 = S.v7_1 + 1 | 0;
+    S.s7_1 = S.s7_1 - c;
+    S.x7_1[b] = l + 1 | 0;
+    if (S.x7_1[b] === 5) {
+      if (S.w7_1 < 300) {
+        S.w7_1 = S.w7_1 + 1 | 0;
       }
       return 2;
     }
@@ -396,33 +405,33 @@
   }
   function canGather(S) {
     _init_properties_logic_kt__ty2k8k();
-    return S.s7_1 >= reqFor(S);
+    return S.t7_1 >= reqFor(S);
   }
   function doGather(S) {
     _init_properties_logic_kt__ty2k8k();
     if (!canGather(S))
       return -1;
-    var gained = prismsFor(S.s7_1);
-    S.y7_1 = S.y7_1 + gained | 0;
-    var wasComplete = S.x7_1 >= (get_SHAPES().h() - 1 | 0);
+    var gained = prismsFor(S.t7_1);
+    S.z7_1 = S.z7_1 > (2000000000 - gained | 0) ? 2000000000 : S.z7_1 + gained | 0;
+    var wasComplete = S.y7_1 >= (get_SHAPES().h() - 1 | 0);
     if (!wasComplete) {
-      S.x7_1 = S.x7_1 + 1 | 0;
+      S.y7_1 = S.y7_1 + 1 | 0;
     }
-    S.k8_1 = S.k8_1 + 1 | 0;
-    S.r7_1 = 0.0;
+    S.l8_1 = S.l8_1 + 1 | 0;
     S.s7_1 = 0.0;
-    S.u7_1 = 10 + imul(25, S.a8_1) | 0;
-    S.v7_1 = 0;
+    S.t7_1 = 0.0;
+    S.v7_1 = 10 + imul(25, S.b8_1) | 0;
+    S.w7_1 = 0;
     var inductionVariable = 0;
-    var last = S.w7_1.length - 1 | 0;
+    var last = S.x7_1.length - 1 | 0;
     if (inductionVariable <= last)
       do {
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        S.w7_1[i] = 0;
+        S.x7_1[i] = 0;
       }
        while (inductionVariable <= last);
-    S.h8_1 = S.g8_1;
+    S.i8_1 = S.h8_1;
     return gained;
   }
   function shopCost(kind, lvl) {
@@ -468,37 +477,37 @@
     var tmp;
     switch (kind) {
       case 'ref':
-        tmp = S.z7_1;
-        break;
-      case 'head':
         tmp = S.a8_1;
         break;
-      case 'after':
+      case 'head':
         tmp = S.b8_1;
         break;
-      case 'mom':
+      case 'after':
         tmp = S.c8_1;
+        break;
+      case 'mom':
+        tmp = S.d8_1;
         break;
       default:
         return false;
     }
     var lvl = tmp;
     var c = shopCost(kind, lvl);
-    if (c < 0.0 || S.y7_1 < c)
+    if (c < 0.0 || S.z7_1 < c)
       return false;
-    S.y7_1 = S.y7_1 - numberToInt(c) | 0;
+    S.z7_1 = S.z7_1 - numberToInt(c) | 0;
     switch (kind) {
       case 'ref':
-        S.z7_1 = S.z7_1 + 1 | 0;
-        break;
-      case 'head':
         S.a8_1 = S.a8_1 + 1 | 0;
         break;
-      case 'after':
+      case 'head':
         S.b8_1 = S.b8_1 + 1 | 0;
         break;
-      case 'mom':
+      case 'after':
         S.c8_1 = S.c8_1 + 1 | 0;
+        break;
+      case 'mom':
+        S.d8_1 = S.d8_1 + 1 | 0;
         break;
     }
     return true;
@@ -523,54 +532,54 @@
     var tmp_0;
     switch (kind) {
       case 'autoP':
-        tmp_0 = S.d8_1;
-        break;
-      case 'autoL':
         tmp_0 = S.e8_1;
         break;
-      case 'autoS':
+      case 'autoL':
         tmp_0 = S.f8_1;
+        break;
+      case 'autoS':
+        tmp_0 = S.g8_1;
         break;
       default:
         return false;
     }
     var owned = tmp_0;
-    if (owned || S.y7_1 < c)
+    if (owned || S.z7_1 < c)
       return false;
-    S.y7_1 = S.y7_1 - c | 0;
+    S.z7_1 = S.z7_1 - c | 0;
     switch (kind) {
       case 'autoP':
-        S.d8_1 = true;
-        break;
-      case 'autoL':
         S.e8_1 = true;
         break;
-      case 'autoS':
+      case 'autoL':
         S.f8_1 = true;
+        break;
+      case 'autoS':
+        S.g8_1 = true;
         break;
     }
     return true;
   }
   function pureTick(S, dt) {
     _init_properties_logic_kt__ty2k8k();
-    S.g8_1 = S.g8_1 + dt;
-    var inc = incomeOf(S, S.g8_1);
-    S.r7_1 = S.r7_1 + inc * dt;
+    S.h8_1 = S.h8_1 + dt;
+    var inc = incomeOf(S, S.h8_1);
     S.s7_1 = S.s7_1 + inc * dt;
     S.t7_1 = S.t7_1 + inc * dt;
-    if (S.d8_1) {
+    S.u7_1 = S.u7_1 + inc * dt;
+    if (S.e8_1) {
       var g = 0;
-      $l$loop: while (g < 200 && S.u7_1 < 6000 && particleCost(S.u7_1) <= inc * 15.0 && buyParticles(S, 1) !== 0) {
+      $l$loop: while (g < 200 && S.v7_1 < 6000 && particleCost(S.v7_1) <= inc * 15.0 && buyParticles(S, 1) !== 0) {
         g = g + 1 | 0;
       }
     }
-    if (S.e8_1) {
+    if (S.f8_1) {
       var g_0 = 0;
-      $l$loop_0: while (g_0 < 200 && S.v7_1 < 300 && lightCost(S.v7_1) <= inc * 30.0 && buyLight(S, 1) !== 0) {
+      $l$loop_0: while (g_0 < 200 && S.w7_1 < 300 && lightCost(S.w7_1) <= inc * 30.0 && buyLight(S, 1) !== 0) {
         g_0 = g_0 + 1 | 0;
       }
     }
-    if (S.f8_1) {
+    if (S.g8_1) {
       var g_1 = 0;
       $l$loop_3: while (g_1 < 60) {
         var bb = -1;
@@ -580,7 +589,7 @@
           $l$loop_1: do {
             var b = inductionVariable;
             inductionVariable = inductionVariable + 1 | 0;
-            var l = S.w7_1[b];
+            var l = S.x7_1[b];
             if (l >= 5)
               continue $l$loop_1;
             var c = bandCost(b, l);
@@ -601,25 +610,25 @@
   function serialize(S) {
     _init_properties_logic_kt__ty2k8k();
     var sb = new StringBuilder('v1');
-    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.r7_1).i4(_Char___init__impl__6a9atx(124)).n4(S.s7_1).i4(_Char___init__impl__6a9atx(124)).n4(S.t7_1);
-    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.u7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.v7_1).i4(_Char___init__impl__6a9atx(124));
+    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.s7_1).i4(_Char___init__impl__6a9atx(124)).n4(S.t7_1).i4(_Char___init__impl__6a9atx(124)).n4(S.u7_1);
+    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.v7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.w7_1).i4(_Char___init__impl__6a9atx(124));
     var inductionVariable = 0;
     if (inductionVariable <= 6)
       do {
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        sb.m4(S.w7_1[i]);
+        sb.m4(S.x7_1[i]);
         if (i < 6) {
           sb.i4(_Char___init__impl__6a9atx(44));
         }
       }
        while (inductionVariable <= 6);
-    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.x7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.y7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.z7_1);
-    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.a8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.b8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.c8_1);
-    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.d8_1 ? 1 : 0).i4(_Char___init__impl__6a9atx(124)).m4(S.e8_1 ? 1 : 0);
-    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.f8_1 ? 1 : 0);
-    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.g8_1).i4(_Char___init__impl__6a9atx(124)).n4(S.h8_1).i4(_Char___init__impl__6a9atx(124)).n4(S.i8_1);
-    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.j8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.k8_1);
+    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.y7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.z7_1).i4(_Char___init__impl__6a9atx(124)).m4(S.a8_1);
+    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.b8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.c8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.d8_1);
+    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.e8_1 ? 1 : 0).i4(_Char___init__impl__6a9atx(124)).m4(S.f8_1 ? 1 : 0);
+    sb.i4(_Char___init__impl__6a9atx(124)).m4(S.g8_1 ? 1 : 0);
+    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.h8_1).i4(_Char___init__impl__6a9atx(124)).n4(S.i8_1).i4(_Char___init__impl__6a9atx(124)).n4(S.j8_1);
+    sb.i4(_Char___init__impl__6a9atx(124)).n4(S.k8_1).i4(_Char___init__impl__6a9atx(124)).m4(S.l8_1);
     return sb.toString();
   }
   function deserialize(raw) {
@@ -632,34 +641,34 @@
     var tmp;
     try {
       var S = new GameState();
-      S.r7_1 = toDouble(f.i(1));
-      S.s7_1 = toDouble(f.i(2));
-      S.t7_1 = toDouble(f.i(3));
-      S.u7_1 = toInt(f.i(4));
-      S.v7_1 = toInt(f.i(5));
+      S.s7_1 = toDouble(f.i(1));
+      S.t7_1 = toDouble(f.i(2));
+      S.u7_1 = toDouble(f.i(3));
+      S.v7_1 = toInt(f.i(4));
+      S.w7_1 = toInt(f.i(5));
       var bs = split(f.i(6), [',']);
       var inductionVariable = 0;
       if (inductionVariable <= 6)
         do {
           var i = inductionVariable;
           inductionVariable = inductionVariable + 1 | 0;
-          S.w7_1[i] = i < bs.h() ? toInt(bs.i(i)) : 0;
+          S.x7_1[i] = i < bs.h() ? toInt(bs.i(i)) : 0;
         }
          while (inductionVariable <= 6);
-      S.x7_1 = toInt(f.i(7));
-      S.y7_1 = toInt(f.i(8));
-      S.z7_1 = toInt(f.i(9));
-      S.a8_1 = toInt(f.i(10));
-      S.b8_1 = toInt(f.i(11));
-      S.c8_1 = toInt(f.i(12));
-      S.d8_1 = f.i(13) === '1';
-      S.e8_1 = f.i(14) === '1';
-      S.f8_1 = f.i(15) === '1';
-      S.g8_1 = toDouble(f.i(16));
-      S.h8_1 = toDouble(f.i(17));
-      S.i8_1 = toDouble(f.i(18));
-      S.j8_1 = toDouble(f.i(19));
-      S.k8_1 = toInt(f.i(20));
+      S.y7_1 = toInt(f.i(7));
+      S.z7_1 = toInt(f.i(8));
+      S.a8_1 = toInt(f.i(9));
+      S.b8_1 = toInt(f.i(10));
+      S.c8_1 = toInt(f.i(11));
+      S.d8_1 = toInt(f.i(12));
+      S.e8_1 = f.i(13) === '1';
+      S.f8_1 = f.i(14) === '1';
+      S.g8_1 = f.i(15) === '1';
+      S.h8_1 = toDouble(f.i(16));
+      S.i8_1 = toDouble(f.i(17));
+      S.j8_1 = toDouble(f.i(18));
+      S.k8_1 = toDouble(f.i(19));
+      S.l8_1 = toInt(f.i(20));
       tmp = S;
     } catch ($p) {
       var tmp_0;
@@ -726,7 +735,7 @@
   function _init_properties_logic_kt__ty2k8k() {
     if (!properties_initialized_logic_kt_gv5mr2) {
       properties_initialized_logic_kt_gv5mr2 = true;
-      SHAPES = listOf([new Shape('sphere', 'FORMLESS SPHERE', 'zero corners \xB7 pure potential', 1.0), new Shape('tri', 'TRIANGLE', '3 corners \xB7 STABILITY', 3.0), new Shape('square', 'SQUARE', '4 corners \xB7 FOUNDATION', 5.0), new Shape('pent', 'PENTAGON', '5 corners \xB7 the golden ratio lives here', 8.0), new Shape('hex', 'HEXAGON', "6 corners \xB7 nature's lattice", 13.0), new Shape('star', 'STAR', '10 corners \xB7 RADIANCE', 25.0), new Shape('heart', 'HEART', 'abstract: the cusp \xB7 PULSE', 50.0), new Shape('galaxy', 'SPIRAL GALAXY', 'abstract: angular momentum', 120.0), new Shape('mobius', 'M\xD6BIUS BAND', 'abstract: one side \xB7 offline gains \xD72', 350.0), new Shape('klein', 'KLEIN BOTTLE', 'abstract: contained infinity', 1000.0), new Shape('knot', 'TORUS KNOT', 'abstract: knottedness \xB7 BINDING', 4000.0), new Shape('tesseract', 'TESSERACT', 'abstract: the fourth dimension', 20000.0)]);
+      SHAPES = listOf([new Shape('sphere', 'FORMLESS SPHERE', 'zero corners \xB7 pure potential', 1.0), new Shape('tri', 'TRIANGLE', '3 corners \xB7 STABILITY', 3.0), new Shape('square', 'SQUARE', '4 corners \xB7 FOUNDATION', 5.0), new Shape('pent', 'PENTAGON', '5 corners \xB7 the golden ratio lives here', 8.0, 4.0), new Shape('hex', 'HEXAGON', "6 corners \xB7 nature's lattice", 13.0, 12.0), new Shape('star', 'STAR', '10 corners \xB7 RADIANCE', 25.0, 30.0), new Shape('heart', 'HEART', 'abstract: the cusp \xB7 PULSE', 50.0, 56.0), new Shape('galaxy', 'SPIRAL GALAXY', 'abstract: angular momentum', 120.0, 85.0), new Shape('mobius', 'M\xD6BIUS BAND', 'abstract: one side \xB7 offline gains \xD72', 350.0, 85.0), new Shape('klein', 'KLEIN BOTTLE', 'abstract: contained infinity', 1000.0, 115.0), new Shape('knot', 'TORUS KNOT', 'abstract: knottedness \xB7 BINDING', 4000.0, 115.0), new Shape('tesseract', 'TESSERACT', 'abstract: the fourth dimension', 20000.0, 115.0)]);
       SUF = listOf(['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', 'UDc', 'DDc', 'TDc', 'QaDc', 'QiDc', 'SxDc', 'SpDc', 'OcDc', 'NoDc', 'Vg', 'UVg', 'DVg', 'TVg', 'QaVg']);
     }
   }
@@ -1136,34 +1145,34 @@
   }
   function Eng() {
     Eng_instance = this;
-    this.l8_1 = new Float64Array(15000);
     this.m8_1 = new Float64Array(15000);
     this.n8_1 = new Float64Array(15000);
     this.o8_1 = new Float64Array(15000);
     this.p8_1 = new Float64Array(15000);
     this.q8_1 = new Float64Array(15000);
-    this.r8_1 = new Float64Array(45000);
+    this.r8_1 = new Float64Array(15000);
     this.s8_1 = new Float64Array(45000);
-    this.t8_1 = false;
-    this.u8_1 = new Float64Array(3);
+    this.t8_1 = new Float64Array(45000);
+    this.u8_1 = false;
     this.v8_1 = new Float64Array(3);
     this.w8_1 = new Float64Array(3);
-    this.x8_1 = new Float64Array(64);
-    this.y8_1 = new Int32Array(32);
+    this.x8_1 = new Float64Array(3);
+    this.y8_1 = new Float64Array(64);
     this.z8_1 = new Int32Array(32);
-    this.a9_1 = new Float64Array(3);
-    this.b9_1 = HashMap_init_$Create$();
+    this.a9_1 = new Int32Array(32);
+    this.b9_1 = new Float64Array(3);
+    this.c9_1 = HashMap_init_$Create$();
     var inductionVariable = 0;
     if (inductionVariable < 15000)
       do {
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        this.l8_1[i] = i * 0.618033988749895 % 1.0;
-        this.m8_1[i] = i * 0.7548776662466927 % 1.0;
-        this.n8_1[i] = Default_getInstance().d5();
+        this.m8_1[i] = i * 0.618033988749895 % 1.0;
+        this.n8_1[i] = i * 0.7548776662466927 % 1.0;
         this.o8_1[i] = Default_getInstance().d5();
         this.p8_1[i] = Default_getInstance().d5();
         this.q8_1[i] = Default_getInstance().d5();
+        this.r8_1[i] = Default_getInstance().d5();
       }
        while (inductionVariable < 15000);
     var vi = 0;
@@ -1175,10 +1184,10 @@
         while (c <= 1.0) {
           var d = -1.0;
           while (d <= 1.0) {
-            this.x8_1[vi] = a;
-            this.x8_1[vi + 1 | 0] = b;
-            this.x8_1[vi + 2 | 0] = c;
-            this.x8_1[vi + 3 | 0] = d;
+            this.y8_1[vi] = a;
+            this.y8_1[vi + 1 | 0] = b;
+            this.y8_1[vi + 2 | 0] = c;
+            this.y8_1[vi + 3 | 0] = d;
             vi = vi + 4 | 0;
             d = d + 2.0;
           }
@@ -1205,14 +1214,14 @@
               do {
                 var k = inductionVariable_2;
                 inductionVariable_2 = inductionVariable_2 + 1 | 0;
-                if (!(this.x8_1[imul(p, 4) + k | 0] === this.x8_1[imul(q, 4) + k | 0])) {
+                if (!(this.y8_1[imul(p, 4) + k | 0] === this.y8_1[imul(q, 4) + k | 0])) {
                   diff = diff + 1 | 0;
                 }
               }
                while (inductionVariable_2 < 4);
             if (diff === 1) {
-              this.y8_1[ei] = p;
-              this.z8_1[ei] = q;
+              this.z8_1[ei] = p;
+              this.a9_1[ei] = q;
               ei = ei + 1 | 0;
             }
           }
@@ -1220,8 +1229,8 @@
       }
        while (inductionVariable_0 < 16);
   }
-  protoOf(Eng).c9 = function () {
-    if (this.t8_1)
+  protoOf(Eng).d9 = function () {
+    if (this.u8_1)
       return Unit_instance;
     var count = 0;
     var att = 0;
@@ -1236,9 +1245,9 @@
       // Inline function 'kotlin.math.abs' call
       if (Math.abs(f) < eps) {
         var j = imul(count, 3);
-        this.s8_1[j] = x * 0.95;
-        this.s8_1[j + 1 | 0] = z * 0.95;
-        this.s8_1[j + 2 | 0] = y * 0.95;
+        this.t8_1[j] = x * 0.95;
+        this.t8_1[j + 1 | 0] = z * 0.95;
+        this.t8_1[j + 2 | 0] = y * 0.95;
         count = count + 1 | 0;
       }
       if ((att % 200000 | 0) === 0 && count < 15000)
@@ -1252,16 +1261,16 @@
       var src = numberToInt(tmp * tmp$ret$1);
       var j_0 = imul(count, 3);
       var k = imul(src, 3);
-      this.s8_1[j_0] = this.s8_1[k] + (Default_getInstance().d5() - 0.5) * 0.02;
-      this.s8_1[j_0 + 1 | 0] = this.s8_1[k + 1 | 0] + (Default_getInstance().d5() - 0.5) * 0.02;
-      this.s8_1[j_0 + 2 | 0] = this.s8_1[k + 2 | 0] + (Default_getInstance().d5() - 0.5) * 0.02;
+      this.t8_1[j_0] = this.t8_1[k] + (Default_getInstance().d5() - 0.5) * 0.02;
+      this.t8_1[j_0 + 1 | 0] = this.t8_1[k + 1 | 0] + (Default_getInstance().d5() - 0.5) * 0.02;
+      this.t8_1[j_0 + 2 | 0] = this.t8_1[k + 2 | 0] + (Default_getInstance().d5() - 0.5) * 0.02;
       count = count + 1 | 0;
     }
-    this.t8_1 = true;
+    this.u8_1 = true;
   };
-  protoOf(Eng).d9 = function (key) {
+  protoOf(Eng).e9 = function (key) {
     // Inline function 'kotlin.collections.getOrPut' call
-    var this_0 = this.b9_1;
+    var this_0 = this.c9_1;
     var value = this_0.s(key);
     var tmp;
     if (value == null) {
@@ -1273,7 +1282,7 @@
     }
     return tmp;
   };
-  protoOf(Eng).e9 = function (T, o) {
+  protoOf(Eng).f9 = function (T, o) {
     // Inline function 'kotlin.math.cos' call
     var x = 3.0 * T;
     var w = 2.0 + Math.cos(x);
@@ -1287,13 +1296,13 @@
     var x_2 = 2.0 * T;
     o[2] = w * Math.sin(x_2) * 0.55;
   };
-  protoOf(Eng).f9 = function (key, i, t, out) {
-    var u = this.l8_1[i];
-    var v = this.m8_1[i];
-    var r1 = this.n8_1[i];
-    var r2 = this.o8_1[i];
-    var r3 = this.p8_1[i];
-    var r4 = this.q8_1[i];
+  protoOf(Eng).g9 = function (key, i, t, out) {
+    var u = this.m8_1[i];
+    var v = this.n8_1[i];
+    var r1 = this.o8_1[i];
+    var r2 = this.p8_1[i];
+    var r3 = this.q8_1[i];
+    var r4 = this.r8_1[i];
     var j = imul(i, 3);
     switch (key) {
       case 'sphere':
@@ -1323,7 +1332,7 @@
       case 'pent':
       case 'hex':
       case 'star':
-        var P = this.d9(key);
+        var P = this.e9(key);
         var C = P.length;
         var tmp6 = C - 1 | 0;
         // Inline function 'kotlin.math.min' call
@@ -1342,7 +1351,7 @@
         out[1] = (key === 'star' ? 0.4 : 0.55) * (v * 2.0 - 1.0);
         break;
       case 'heart':
-        this.c9();
+        this.d9();
         // Inline function 'kotlin.math.sin' call
 
         var x_2 = t * 4.2;
@@ -1364,9 +1373,9 @@
         var this_1 = Math.max(0.0, b_2);
         var s1 = Math.pow(this_1, 10);
         var sc = 1.0 + 0.085 * (s0 + 0.55 * s1);
-        out[0] = this.s8_1[j] * sc;
-        out[1] = this.s8_1[j + 1 | 0] * sc;
-        out[2] = this.s8_1[j + 2 | 0] * sc;
+        out[0] = this.t8_1[j] * sc;
+        out[1] = this.t8_1[j + 1 | 0] * sc;
+        out[2] = this.t8_1[j + 2 | 0] * sc;
         break;
       case 'galaxy':
         if (r4 < 0.05) {
@@ -1449,12 +1458,12 @@
         break;
       case 'knot':
         var T = u * get_TAU() + t * 0.14;
-        this.e9(T, this.u8_1);
-        this.e9(T + 0.01, this.v8_1);
-        this.e9(T - 0.01, this.w8_1);
-        var tx = this.v8_1[0] - this.w8_1[0];
-        var ty = this.v8_1[1] - this.w8_1[1];
-        var tz = this.v8_1[2] - this.w8_1[2];
+        this.f9(T, this.v8_1);
+        this.f9(T + 0.01, this.w8_1);
+        this.f9(T - 0.01, this.x8_1);
+        var tx = this.w8_1[0] - this.x8_1[0];
+        var ty = this.w8_1[1] - this.x8_1[1];
+        var tz = this.w8_1[2] - this.x8_1[2];
         // Inline function 'kotlin.math.sqrt' call
 
         var x_11 = tx * tx + ty * ty + tz * tz;
@@ -1492,19 +1501,19 @@
         // Inline function 'kotlin.math.sin' call
 
         var si = Math.sin(ph) * off;
-        out[0] = this.u8_1[0] + ax * co + bx * si;
-        out[1] = this.u8_1[1] + ay * co + by * si;
-        out[2] = this.u8_1[2] + az * co + bz * si;
+        out[0] = this.v8_1[0] + ax * co + bx * si;
+        out[1] = this.v8_1[1] + ay * co + by * si;
+        out[2] = this.v8_1[2] + az * co + bz * si;
         break;
       case 'tesseract':
         var e_0 = numberToInt(u * 32);
         var q = u * 32.0 - e_0;
-        var va = imul(this.y8_1[e_0], 4);
-        var vb = imul(this.z8_1[e_0], 4);
-        var px = this.x8_1[va] + (this.x8_1[vb] - this.x8_1[va]) * q;
-        var py = this.x8_1[va + 1 | 0] + (this.x8_1[vb + 1 | 0] - this.x8_1[va + 1 | 0]) * q;
-        var pz = this.x8_1[va + 2 | 0] + (this.x8_1[vb + 2 | 0] - this.x8_1[va + 2 | 0]) * q;
-        var pw = this.x8_1[va + 3 | 0] + (this.x8_1[vb + 3 | 0] - this.x8_1[va + 3 | 0]) * q;
+        var va = imul(this.z8_1[e_0], 4);
+        var vb = imul(this.a9_1[e_0], 4);
+        var px = this.y8_1[va] + (this.y8_1[vb] - this.y8_1[va]) * q;
+        var py = this.y8_1[va + 1 | 0] + (this.y8_1[vb + 1 | 0] - this.y8_1[va + 1 | 0]) * q;
+        var pz = this.y8_1[va + 2 | 0] + (this.y8_1[vb + 2 | 0] - this.y8_1[va + 2 | 0]) * q;
+        var pw = this.y8_1[va + 3 | 0] + (this.y8_1[vb + 3 | 0] - this.y8_1[va + 3 | 0]) * q;
         var A = t * 0.5;
         var B = t * 0.35;
         // Inline function 'kotlin.math.cos' call
@@ -1582,15 +1591,15 @@
   }
   function Blend() {
     Blend_instance = this;
-    this.g9_1 = false;
-    this.h9_1 = 'sphere';
-    this.i9_1 = 0.0;
-    this.j9_1 = 1.0;
+    this.h9_1 = false;
+    this.i9_1 = 'sphere';
+    this.j9_1 = 0.0;
     this.k9_1 = 1.0;
-    this.l9_1 = null;
-    this.m9_1 = new Float64Array(45000);
+    this.l9_1 = 1.0;
+    this.m9_1 = null;
     this.n9_1 = new Float64Array(45000);
-    this.o9_1 = new Float64Array(15000);
+    this.o9_1 = new Float64Array(45000);
+    this.p9_1 = new Float64Array(15000);
   }
   var Blend_instance;
   function Blend_getInstance() {
@@ -1600,9 +1609,9 @@
   }
   function startBlend(key, dur, ease, stagger, swirlAmp) {
     _init_properties_web_kt__le8mgy();
-    var tmp0 = Eng_getInstance().r8_1;
+    var tmp0 = Eng_getInstance().s8_1;
     // Inline function 'kotlin.collections.copyInto' call
-    var destination = Blend_getInstance().m9_1;
+    var destination = Blend_getInstance().n9_1;
     var endIndex = tmp0.length;
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -1616,17 +1625,17 @@
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
         var j = imul(i, 3);
-        Eng_getInstance().f9(key, i, Engine_getInstance().q9_1, Eng_getInstance().a9_1);
-        var tx = Eng_getInstance().a9_1[0] - Blend_getInstance().m9_1[j];
-        var ty = Eng_getInstance().a9_1[1] - Blend_getInstance().m9_1[j + 1 | 0];
-        var tz = Eng_getInstance().a9_1[2] - Blend_getInstance().m9_1[j + 2 | 0];
+        Eng_getInstance().g9(key, i, Engine_getInstance().r9_1, Eng_getInstance().b9_1);
+        var tx = Eng_getInstance().b9_1[0] - Blend_getInstance().n9_1[j];
+        var ty = Eng_getInstance().b9_1[1] - Blend_getInstance().n9_1[j + 1 | 0];
+        var tz = Eng_getInstance().b9_1[2] - Blend_getInstance().n9_1[j + 2 | 0];
         // Inline function 'kotlin.math.sqrt' call
         var x = tx * tx + ty * ty + tz * tz;
         var tl = Math.sqrt(x);
         if (tl > 0.03) {
-          var ax = Eng_getInstance().o8_1[i] - 0.5;
-          var ay = Eng_getInstance().p8_1[i] - 0.5;
-          var az = Eng_getInstance().q8_1[i] - 0.5;
+          var ax = Eng_getInstance().p8_1[i] - 0.5;
+          var ay = Eng_getInstance().q8_1[i] - 0.5;
+          var az = Eng_getInstance().r8_1[i] - 0.5;
           // Inline function 'kotlin.math.sqrt' call
           var x_0 = ax * ax + ay * ay + az * az;
           var al = Math.sqrt(x_0);
@@ -1648,54 +1657,54 @@
           // Inline function 'kotlin.math.sqrt' call
           var x_1 = cx * cx + cy * cy + cz * cz;
           var cl = Math.sqrt(x_1);
-          var mag = (Eng_getInstance().n8_1[i] - 0.5) * 2.0 * swirlAmp;
+          var mag = (Eng_getInstance().o8_1[i] - 0.5) * 2.0 * swirlAmp;
           if (cl <= 0.0) {
-            Blend_getInstance().n9_1[j] = 0.0;
-            Blend_getInstance().n9_1[j + 1 | 0] = 0.0;
-            Blend_getInstance().n9_1[j + 2 | 0] = 0.0;
+            Blend_getInstance().o9_1[j] = 0.0;
+            Blend_getInstance().o9_1[j + 1 | 0] = 0.0;
+            Blend_getInstance().o9_1[j + 2 | 0] = 0.0;
           } else {
-            Blend_getInstance().n9_1[j] = cx / cl * mag;
-            Blend_getInstance().n9_1[j + 1 | 0] = cy / cl * mag;
-            Blend_getInstance().n9_1[j + 2 | 0] = cz / cl * mag;
+            Blend_getInstance().o9_1[j] = cx / cl * mag;
+            Blend_getInstance().o9_1[j + 1 | 0] = cy / cl * mag;
+            Blend_getInstance().o9_1[j + 2 | 0] = cz / cl * mag;
           }
         } else {
-          Blend_getInstance().n9_1[j] = 0.0;
-          Blend_getInstance().n9_1[j + 1 | 0] = 0.0;
-          Blend_getInstance().n9_1[j + 2 | 0] = 0.0;
+          Blend_getInstance().o9_1[j] = 0.0;
+          Blend_getInstance().o9_1[j + 1 | 0] = 0.0;
+          Blend_getInstance().o9_1[j + 2 | 0] = 0.0;
         }
-        Blend_getInstance().o9_1[i] = stagger * dur * Eng_getInstance().p8_1[i];
+        Blend_getInstance().p9_1[i] = stagger * dur * Eng_getInstance().q8_1[i];
       }
        while (inductionVariable < 15000);
-    Blend_getInstance().h9_1 = key;
-    Blend_getInstance().i9_1 = 0.0;
-    Blend_getInstance().j9_1 = dur;
-    Blend_getInstance().k9_1 = dur * (1.0 - stagger);
-    Blend_getInstance().l9_1 = ease;
-    Blend_getInstance().g9_1 = true;
+    Blend_getInstance().i9_1 = key;
+    Blend_getInstance().j9_1 = 0.0;
+    Blend_getInstance().k9_1 = dur;
+    Blend_getInstance().l9_1 = dur * (1.0 - stagger);
+    Blend_getInstance().m9_1 = ease;
+    Blend_getInstance().h9_1 = true;
   }
   function Cam(d, el, spin) {
-    this.ca_1 = d;
-    this.da_1 = el;
-    this.ea_1 = spin;
+    this.da_1 = d;
+    this.ea_1 = el;
+    this.fa_1 = spin;
   }
   function Engine() {
     Engine_instance = this;
-    this.p9_1 = mapOf([to('sphere', new Cam(4.6, 0.24, 0.12)), to('tri', new Cam(4.6, 0.35, 0.22)), to('square', new Cam(4.6, 0.35, 0.22)), to('pent', new Cam(4.6, 0.35, 0.22)), to('hex', new Cam(4.6, 0.38, 0.2)), to('star', new Cam(4.9, 0.3, 0.26)), to('heart', new Cam(4.6, 0.14, 0.1)), to('galaxy', new Cam(5.9, 0.96, 0.07)), to('mobius', new Cam(4.7, 0.45, 0.16)), to('klein', new Cam(4.7, 0.55, 0.2)), to('knot', new Cam(5.3, 0.55, 0.16)), to('tesseract', new Cam(6.2, 0.28, 0.18)), to('nova', new Cam(6.8, 0.3, 0.09))]);
-    this.q9_1 = 0.0;
-    this.r9_1 = 'sphere';
-    this.s9_1 = 0.6;
-    this.t9_1 = 4.6;
-    this.u9_1 = 0.24;
-    this.v9_1 = 0.12;
-    this.w9_1 = 0.53;
-    this.x9_1 = 0.0;
-    this.y9_1 = 300;
-    this.z9_1 = -1;
-    this.aa_1 = 'sphere';
-    this.ba_1 = 0.0;
+    this.q9_1 = mapOf([to('sphere', new Cam(4.6, 0.24, 0.12)), to('tri', new Cam(4.6, 0.35, 0.22)), to('square', new Cam(4.6, 0.35, 0.22)), to('pent', new Cam(4.6, 0.35, 0.22)), to('hex', new Cam(4.6, 0.38, 0.2)), to('star', new Cam(4.9, 0.3, 0.26)), to('heart', new Cam(4.6, 0.14, 0.1)), to('galaxy', new Cam(5.9, 0.96, 0.07)), to('mobius', new Cam(4.7, 0.45, 0.16)), to('klein', new Cam(4.7, 0.55, 0.2)), to('knot', new Cam(5.3, 0.55, 0.16)), to('tesseract', new Cam(6.2, 0.28, 0.18)), to('nova', new Cam(6.8, 0.3, 0.09))]);
+    this.r9_1 = 0.0;
+    this.s9_1 = 'sphere';
+    this.t9_1 = 0.6;
+    this.u9_1 = 4.6;
+    this.v9_1 = 0.24;
+    this.w9_1 = 0.12;
+    this.x9_1 = 0.53;
+    this.y9_1 = 0.0;
+    this.z9_1 = 300;
+    this.aa_1 = -1;
+    this.ba_1 = 'sphere';
+    this.ca_1 = 0.0;
   }
-  protoOf(Engine).fa = function (key) {
-    var tmp0_elvis_lhs = this.p9_1.s(key);
+  protoOf(Engine).ga = function (key) {
+    var tmp0_elvis_lhs = this.q9_1.s(key);
     return tmp0_elvis_lhs == null ? new Cam(4.6, 0.3, 0.2) : tmp0_elvis_lhs;
   };
   var Engine_instance;
@@ -1755,10 +1764,10 @@
       do {
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        get_seedF32()[imul(i, 4)] = Eng_getInstance().n8_1[i];
-        get_seedF32()[imul(i, 4) + 1 | 0] = Eng_getInstance().o8_1[i];
-        get_seedF32()[imul(i, 4) + 2 | 0] = Eng_getInstance().p8_1[i];
-        get_seedF32()[imul(i, 4) + 3 | 0] = Eng_getInstance().q8_1[i];
+        get_seedF32()[imul(i, 4)] = Eng_getInstance().o8_1[i];
+        get_seedF32()[imul(i, 4) + 1 | 0] = Eng_getInstance().p8_1[i];
+        get_seedF32()[imul(i, 4) + 2 | 0] = Eng_getInstance().q8_1[i];
+        get_seedF32()[imul(i, 4) + 3 | 0] = Eng_getInstance().r8_1[i];
       }
        while (inductionVariable < 15000);
     set_starF32(mkf32(1140));
@@ -1873,8 +1882,8 @@
     _init_properties_web_kt__le8mgy();
     var tmp = get_S();
     var tmp_0 = win().Date.now();
-    tmp.i8_1 = (!(tmp_0 == null) ? typeof tmp_0 === 'number' : false) ? tmp_0 : THROW_CCE();
-    get_S().j8_1 = incomeOf(get_S(), get_S().g8_1);
+    tmp.j8_1 = (!(tmp_0 == null) ? typeof tmp_0 === 'number' : false) ? tmp_0 : THROW_CCE();
+    get_S().k8_1 = incomeOf(get_S(), get_S().h8_1);
     store().setItem('flutterlight_kt_v1', serialize(get_S()));
   }
   function loadGame() {
@@ -1896,13 +1905,13 @@
       do {
         var k = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        if (get_S().w7_1[k] > 0)
+        if (get_S().x7_1[k] > 0)
           b = k;
       }
        while (inductionVariable <= 6);
     if (b < 0)
       return 0.53;
-    return get_BANDHUES()[b] + 0.015 * get_S().w7_1[b];
+    return get_BANDHUES()[b] + 0.015 * get_S().x7_1[b];
   }
   function toast(msg) {
     _init_properties_web_kt__le8mgy();
@@ -1930,27 +1939,27 @@
     E('cer').classList.remove('on');
   }
   function BandRow(idx, btn, cost, sub, p0, p1, p2, p3, p4) {
-    this.ga_1 = idx;
-    this.ha_1 = btn;
-    this.ia_1 = cost;
-    this.ja_1 = sub;
-    this.ka_1 = p0;
-    this.la_1 = p1;
-    this.ma_1 = p2;
-    this.na_1 = p3;
-    this.oa_1 = p4;
+    this.ha_1 = idx;
+    this.ia_1 = btn;
+    this.ja_1 = cost;
+    this.ka_1 = sub;
+    this.la_1 = p0;
+    this.ma_1 = p1;
+    this.na_1 = p2;
+    this.oa_1 = p3;
+    this.pa_1 = p4;
   }
-  protoOf(BandRow).pa = function () {
-    var lvl = get_S().w7_1[this.ga_1];
-    this.ka_1.className = lvl > 0 ? 'f' : '';
-    this.la_1.className = lvl > 1 ? 'f' : '';
-    this.ma_1.className = lvl > 2 ? 'f' : '';
-    this.na_1.className = lvl > 3 ? 'f' : '';
-    this.oa_1.className = lvl > 4 ? 'f' : '';
-    this.ja_1.textContent = lvl >= 5 ? 'MASTERED' : '\xD71.10 all production';
-    var c = bandCost(this.ga_1, lvl);
-    this.ha_1.disabled = lvl >= 5 || get_S().r7_1 < c;
-    this.ia_1.textContent = lvl >= 5 ? 'DONE' : fmt(c);
+  protoOf(BandRow).qa = function () {
+    var lvl = get_S().x7_1[this.ha_1];
+    this.la_1.className = lvl > 0 ? 'f' : '';
+    this.ma_1.className = lvl > 1 ? 'f' : '';
+    this.na_1.className = lvl > 2 ? 'f' : '';
+    this.oa_1.className = lvl > 3 ? 'f' : '';
+    this.pa_1.className = lvl > 4 ? 'f' : '';
+    this.ka_1.textContent = lvl >= 5 ? 'MASTERED' : '\xD71.10 all production';
+    var c = bandCost(this.ha_1, lvl);
+    this.ia_1.disabled = lvl >= 5 || get_S().s7_1 < c;
+    this.ja_1.textContent = lvl >= 5 ? 'DONE' : fmt(c);
   };
   function buildSpectrumRows() {
     _init_properties_web_kt__le8mgy();
@@ -1998,10 +2007,10 @@
        while (inductionVariable <= 6);
   }
   function ShopRow(btn, cost, sub, update) {
-    this.qa_1 = btn;
-    this.ra_1 = cost;
-    this.sa_1 = sub;
-    this.ta_1 = update;
+    this.ra_1 = btn;
+    this.sa_1 = cost;
+    this.ta_1 = sub;
+    this.ua_1 = update;
   }
   function addShopRow(label, onClick, update) {
     _init_properties_web_kt__le8mgy();
@@ -2076,60 +2085,60 @@
   }
   function refreshUI() {
     _init_properties_web_kt__le8mgy();
-    var inc = incomeOf(get_S(), get_S().g8_1);
-    E('lightVal').textContent = fmt(get_S().r7_1);
+    var inc = incomeOf(get_S(), get_S().h8_1);
+    E('lightVal').textContent = fmt(get_S().s7_1);
     E('lightRate').textContent = fmt(inc) + ' /s';
-    E('prismVal').textContent = get_S().y7_1 > 0 || get_S().x7_1 > 0 ? '\u25C6 ' + fmt(get_S().y7_1) : '\u2014';
+    E('prismVal').textContent = get_S().z7_1 > 0 || get_S().y7_1 > 0 ? '\u25C6 ' + fmt(get_S().z7_1) : '\u2014';
     if (get_curTab() === 'swarm') {
-      E('pCount').textContent = fmt(get_S().u7_1);
+      E('pCount').textContent = fmt(get_S().v7_1);
       // Inline function 'kotlin.math.pow' call
-      var n = get_S().v7_1;
+      var n = get_S().w7_1;
       var tmp$ret$0 = Math.pow(1.25, n);
-      E('pInfo').textContent = fmt(1.0 * tmp$ret$0 * shapeMult(get_S().x7_1) * spectrumMult(get_S().w7_1) * prismMult(get_S().z7_1) * momentumMult(get_S(), get_S().g8_1)) + ' light/s each';
-      var c1 = particleCost(get_S().u7_1);
-      E('bp1').disabled = get_S().r7_1 < c1 || get_S().u7_1 >= 6000;
+      E('pInfo').textContent = fmt(1.0 * tmp$ret$0 * shapeMult(get_S().y7_1) * spectrumMult(get_S().x7_1) * prismMult(get_S().a8_1) * momentumMult(get_S(), get_S().h8_1)) + ' light/s each';
+      var c1 = particleCost(get_S().v7_1);
+      E('bp1').disabled = get_S().s7_1 < c1 || get_S().v7_1 >= 6000;
       E('bp1c').textContent = fmt(c1);
       // Inline function 'kotlin.math.min' call
-      var b = maxParticlesAfford(get_S().u7_1, get_S().r7_1);
+      var b = maxParticlesAfford(get_S().v7_1, get_S().s7_1);
       var n10 = Math.min(10, b);
-      var tmp = get_S().u7_1;
+      var tmp = get_S().v7_1;
       // Inline function 'kotlin.math.min' call
-      var b_0 = 6000 - get_S().u7_1 | 0;
+      var b_0 = 6000 - get_S().v7_1 | 0;
       var tmp$ret$2 = Math.min(10, b_0);
       var c10 = bulkParticleCost(tmp, tmp$ret$2);
-      E('bp10').disabled = n10 < 10 || get_S().u7_1 >= 6000;
+      E('bp10').disabled = n10 < 10 || get_S().v7_1 >= 6000;
       E('bp10c').textContent = fmt(c10);
-      var nM = maxParticlesAfford(get_S().u7_1, get_S().r7_1);
-      E('bpMax').disabled = nM < 1 || get_S().u7_1 >= 6000;
+      var nM = maxParticlesAfford(get_S().v7_1, get_S().s7_1);
+      E('bpMax').disabled = nM < 1 || get_S().v7_1 >= 6000;
       E('bpMaxc').textContent = nM >= 1 ? '+' + fmt(nM) : '\u2014';
-      E('lCount').textContent = fmt(get_S().v7_1);
+      E('lCount').textContent = fmt(get_S().w7_1);
       // Inline function 'kotlin.math.pow' call
-      var n_0 = get_S().v7_1;
+      var n_0 = get_S().w7_1;
       var tmp$ret$3 = Math.pow(1.25, n_0);
       E('lInfo').textContent = '\xD7' + fmt(tmp$ret$3) + ' efficiency';
-      var cl1 = lightCost(get_S().v7_1);
-      E('bl1').disabled = get_S().r7_1 < cl1 || get_S().v7_1 >= 300;
+      var cl1 = lightCost(get_S().w7_1);
+      E('bl1').disabled = get_S().s7_1 < cl1 || get_S().w7_1 >= 300;
       E('bl1c').textContent = fmt(cl1);
-      var lM = maxLightAfford(get_S().v7_1, get_S().r7_1);
-      E('blMax').disabled = lM < 1 || get_S().v7_1 >= 300;
+      var lM = maxLightAfford(get_S().w7_1, get_S().s7_1);
+      E('blMax').disabled = lM < 1 || get_S().w7_1 >= 300;
       E('blMaxc').textContent = lM >= 1 ? '+' + fmt(lM) : '\u2014';
-      var tmp_0 = 'P ' + fmt(get_S().u7_1) + ' \xD7 level \xD7';
+      var tmp_0 = 'P ' + fmt(get_S().v7_1) + ' \xD7 level \xD7';
       // Inline function 'kotlin.math.pow' call
-      var n_1 = get_S().v7_1;
+      var n_1 = get_S().w7_1;
       var tmp$ret$4 = Math.pow(1.25, n_1);
-      E('prodBreak').textContent = tmp_0 + fmt(tmp$ret$4) + ' \xD7 shapes ' + fmtMult(shapeMult(get_S().x7_1)) + ' \xD7 spectrum ' + fmtMult(spectrumMult(get_S().w7_1)) + ' \xD7 refraction ' + fmtMult(prismMult(get_S().z7_1)) + ' \xD7 momentum ' + fmtMult(momentumMult(get_S(), get_S().g8_1));
+      E('prodBreak').textContent = tmp_0 + fmt(tmp$ret$4) + ' \xD7 shapes ' + fmtMult(shapeMult(get_S().y7_1)) + ' \xD7 spectrum ' + fmtMult(spectrumMult(get_S().x7_1)) + ' \xD7 refraction ' + fmtMult(prismMult(get_S().a8_1)) + ' \xD7 momentum ' + fmtMult(momentumMult(get_S(), get_S().h8_1));
     }
     if (get_curTab() === 'spectrum') {
       var _iterator__ex2g4s = get_bandRows().e();
       while (_iterator__ex2g4s.f()) {
         var r = _iterator__ex2g4s.g();
-        r.pa();
+        r.qa();
       }
     }
     if (get_curTab() === 'gather') {
-      var cur = get_SHAPES().i(get_S().x7_1);
-      E('curShape').textContent = 'FORMATION: ' + cur.o7_1 + ' \u2014 ' + cur.p7_1 + ' \xB7 shapes bonus ' + fmtMult(shapeMult(get_S().x7_1));
-      var tmp10 = get_S().x7_1 + 1 | 0;
+      var cur = get_SHAPES().i(get_S().y7_1);
+      E('curShape').textContent = 'FORMATION: ' + cur.o7_1 + ' \u2014 ' + cur.p7_1 + ' \xB7 shapes bonus ' + fmtMult(shapeMult(get_S().y7_1));
+      var tmp10 = get_S().y7_1 + 1 | 0;
       // Inline function 'kotlin.math.min' call
       var b_1 = get_SHAPES().h() - 1 | 0;
       var nk = Math.min(tmp10, b_1);
@@ -2140,15 +2149,15 @@
       var tmp_1;
       if (req > 0.0) {
         // Inline function 'kotlin.math.min' call
-        var b_2 = get_S().s7_1 / req;
+        var b_2 = get_S().t7_1 / req;
         tmp_1 = Math.min(1.0, b_2);
       } else {
         tmp_1 = 0.0;
       }
       var pg = tmp_1;
       E('nextBar').style.width = (pg * 100.0).toString() + '%';
-      E('nextReq').textContent = 'requires ' + fmt(req) + ' light earned this run (' + fmt(get_S().s7_1) + ')';
-      E('nextPrisms').textContent = '\u25C6 +' + fmt(prismsFor(get_S().s7_1));
+      E('nextReq').textContent = 'requires ' + fmt(req) + ' light earned this run (' + fmt(get_S().t7_1) + ')';
+      E('nextPrisms').textContent = '\u25C6 +' + fmt(prismsFor(get_S().t7_1));
       var can = canGather(get_S());
       E('gatherBtn').disabled = !can;
       E('gatherBtn').textContent = can ? 'GATHER' : 'NOT YET';
@@ -2160,7 +2169,7 @@
           var k = inductionVariable;
           inductionVariable = inductionVariable + 1 | 0;
           var sh = get_SHAPES().i(k);
-          var got = k <= get_S().x7_1;
+          var got = k <= get_S().y7_1;
           mus.h4('<div class="musrow"><span class="');
           mus.h4(got ? 'got' : 'lock');
           mus.h4('">').h4(got ? '\u25C6 ' : '\u25C7 ').h4(sh.o7_1);
@@ -2172,51 +2181,51 @@
       E('museum').innerHTML = mus.toString();
     }
     if (get_curTab() === 'prism') {
-      E('prismNote').textContent = '\u25C6 ' + fmt(get_S().y7_1) + ' prisms \u2014 gathered from runs: cbrt(earnings / 1e4)';
+      E('prismNote').textContent = '\u25C6 ' + fmt(get_S().z7_1) + ' prisms \u2014 gathered from runs: cbrt(earnings / 1e4)';
       var _iterator__ex2g4s_0 = get_shopRows().e();
       while (_iterator__ex2g4s_0.f()) {
         var r_0 = _iterator__ex2g4s_0.g();
-        r_0.ta_1(r_0);
+        r_0.ua_1(r_0);
       }
     }
   }
   function engineFrame(dt) {
     _init_properties_web_kt__le8mgy();
-    Engine_getInstance().q9_1 = Engine_getInstance().q9_1 + dt;
+    Engine_getInstance().r9_1 = Engine_getInstance().r9_1 + dt;
     var bright = 1.06;
-    var inCer = Engine_getInstance().z9_1 >= 0;
+    var inCer = Engine_getInstance().aa_1 >= 0;
     if (inCer) {
-      Engine_getInstance().ba_1 = Engine_getInstance().ba_1 + dt;
-      if (Engine_getInstance().z9_1 === 0) {
+      Engine_getInstance().ca_1 = Engine_getInstance().ca_1 + dt;
+      if (Engine_getInstance().aa_1 === 0) {
         startBlend('nova', 0.5, backE(2.6), 0.25, 1.2);
-        Engine_getInstance().t9_1 = 6.8;
-        Engine_getInstance().u9_1 = 0.3;
-        Engine_getInstance().v9_1 = 0.09;
-        Engine_getInstance().z9_1 = 1;
-      } else if (Engine_getInstance().z9_1 === 1 && Engine_getInstance().ba_1 >= 0.55) {
-        startBlend(Engine_getInstance().aa_1, 1.15, backE(2.4), 0.3, 0.35);
-        Engine_getInstance().z9_1 = 2;
-      } else if (Engine_getInstance().z9_1 === 2 && Engine_getInstance().ba_1 >= 1.7) {
-        Engine_getInstance().r9_1 = Engine_getInstance().aa_1;
-        var cam = Engine_getInstance().fa(Engine_getInstance().aa_1);
-        Engine_getInstance().t9_1 = cam.ca_1;
+        Engine_getInstance().u9_1 = 6.8;
+        Engine_getInstance().v9_1 = 0.3;
+        Engine_getInstance().w9_1 = 0.09;
+        Engine_getInstance().aa_1 = 1;
+      } else if (Engine_getInstance().aa_1 === 1 && Engine_getInstance().ca_1 >= 0.55) {
+        startBlend(Engine_getInstance().ba_1, 1.15, backE(2.4), 0.3, 0.35);
+        Engine_getInstance().aa_1 = 2;
+      } else if (Engine_getInstance().aa_1 === 2 && Engine_getInstance().ca_1 >= 1.7) {
+        Engine_getInstance().s9_1 = Engine_getInstance().ba_1;
+        var cam = Engine_getInstance().ga(Engine_getInstance().ba_1);
         Engine_getInstance().u9_1 = cam.da_1;
         Engine_getInstance().v9_1 = cam.ea_1;
-        Engine_getInstance().z9_1 = 3;
-      } else if (Engine_getInstance().z9_1 === 3 && Engine_getInstance().ba_1 >= 3.0) {
-        Engine_getInstance().z9_1 = -1;
+        Engine_getInstance().w9_1 = cam.fa_1;
+        Engine_getInstance().aa_1 = 3;
+      } else if (Engine_getInstance().aa_1 === 3 && Engine_getInstance().ca_1 >= 3.0) {
+        Engine_getInstance().aa_1 = -1;
         cerOff();
       }
       // Inline function 'kotlin.math.exp' call
-      var x = -Engine_getInstance().ba_1 * 1.8;
+      var x = -Engine_getInstance().ca_1 * 1.8;
       bright = 1.3 + 1.9 * Math.exp(x);
-      Engine_getInstance().y9_1 = 15000;
+      Engine_getInstance().z9_1 = 15000;
     }
-    if (Engine_getInstance().z9_1 < 0) {
-      Engine_getInstance().v9_1 = Engine_getInstance().fa(Engine_getInstance().r9_1).ea_1;
+    if (Engine_getInstance().aa_1 < 0) {
+      Engine_getInstance().w9_1 = Engine_getInstance().ga(Engine_getInstance().s9_1).fa_1;
       var tmp = Engine_getInstance();
       // Inline function 'kotlin.math.max' call
-      var b = get_S().u7_1;
+      var b = get_S().v7_1;
       // Inline function 'kotlin.math.pow' call
       var this_0 = Math.max(1.0, b);
       var tmp$ret$2 = Math.pow(this_0, 0.4);
@@ -2224,11 +2233,11 @@
       var b_0 = numberToInt(400.0 * tmp$ret$2);
       // Inline function 'kotlin.math.max' call
       var b_1 = Math.min(15000, b_0);
-      tmp.y9_1 = Math.max(60, b_1);
+      tmp.z9_1 = Math.max(60, b_1);
     }
-    Engine_getInstance().s9_1 = Engine_getInstance().s9_1 + Engine_getInstance().v9_1 * dt;
-    if (Blend_getInstance().g9_1) {
-      Blend_getInstance().i9_1 = Blend_getInstance().i9_1 + dt;
+    Engine_getInstance().t9_1 = Engine_getInstance().t9_1 + Engine_getInstance().w9_1 * dt;
+    if (Blend_getInstance().h9_1) {
+      Blend_getInstance().j9_1 = Blend_getInstance().j9_1 + dt;
       var anyLive = false;
       var inductionVariable = 0;
       if (inductionVariable < 15000)
@@ -2236,65 +2245,65 @@
           var i = inductionVariable;
           inductionVariable = inductionVariable + 1 | 0;
           var j = imul(i, 3);
-          var p = (Blend_getInstance().i9_1 - Blend_getInstance().o9_1[i]) / Blend_getInstance().k9_1;
+          var p = (Blend_getInstance().j9_1 - Blend_getInstance().p9_1[i]) / Blend_getInstance().l9_1;
           if (p > 1.0)
             p = 1.0;
           else if (p < 0.0)
             p = 0.0;
           else
             anyLive = true;
-          Eng_getInstance().f9(Blend_getInstance().h9_1, i, Engine_getInstance().q9_1, Eng_getInstance().a9_1);
+          Eng_getInstance().g9(Blend_getInstance().i9_1, i, Engine_getInstance().r9_1, Eng_getInstance().b9_1);
           if (p >= 1.0) {
-            Eng_getInstance().r8_1[j] = Eng_getInstance().a9_1[0];
-            Eng_getInstance().r8_1[j + 1 | 0] = Eng_getInstance().a9_1[1];
-            Eng_getInstance().r8_1[j + 2 | 0] = Eng_getInstance().a9_1[2];
+            Eng_getInstance().s8_1[j] = Eng_getInstance().b9_1[0];
+            Eng_getInstance().s8_1[j + 1 | 0] = Eng_getInstance().b9_1[1];
+            Eng_getInstance().s8_1[j + 2 | 0] = Eng_getInstance().b9_1[2];
           } else {
-            var easeFn = Blend_getInstance().l9_1;
+            var easeFn = Blend_getInstance().m9_1;
             var e = !(easeFn == null) ? easeFn(p) : ioCubic(p);
             // Inline function 'kotlin.math.sin' call
             var x_0 = 3.141592653589793 * p;
             var wf = Math.sin(x_0);
-            Eng_getInstance().r8_1[j] = Blend_getInstance().m9_1[j] + (Eng_getInstance().a9_1[0] - Blend_getInstance().m9_1[j]) * e + Blend_getInstance().n9_1[j] * wf;
-            Eng_getInstance().r8_1[j + 1 | 0] = Blend_getInstance().m9_1[j + 1 | 0] + (Eng_getInstance().a9_1[1] - Blend_getInstance().m9_1[j + 1 | 0]) * e + Blend_getInstance().n9_1[j + 1 | 0] * wf;
-            Eng_getInstance().r8_1[j + 2 | 0] = Blend_getInstance().m9_1[j + 2 | 0] + (Eng_getInstance().a9_1[2] - Blend_getInstance().m9_1[j + 2 | 0]) * e + Blend_getInstance().n9_1[j + 2 | 0] * wf;
+            Eng_getInstance().s8_1[j] = Blend_getInstance().n9_1[j] + (Eng_getInstance().b9_1[0] - Blend_getInstance().n9_1[j]) * e + Blend_getInstance().o9_1[j] * wf;
+            Eng_getInstance().s8_1[j + 1 | 0] = Blend_getInstance().n9_1[j + 1 | 0] + (Eng_getInstance().b9_1[1] - Blend_getInstance().n9_1[j + 1 | 0]) * e + Blend_getInstance().o9_1[j + 1 | 0] * wf;
+            Eng_getInstance().s8_1[j + 2 | 0] = Blend_getInstance().n9_1[j + 2 | 0] + (Eng_getInstance().b9_1[2] - Blend_getInstance().n9_1[j + 2 | 0]) * e + Blend_getInstance().o9_1[j + 2 | 0] * wf;
           }
         }
          while (inductionVariable < 15000);
-      if (!anyLive && Blend_getInstance().i9_1 > Blend_getInstance().j9_1)
-        Blend_getInstance().g9_1 = false;
+      if (!anyLive && Blend_getInstance().j9_1 > Blend_getInstance().k9_1)
+        Blend_getInstance().h9_1 = false;
     } else {
-      var keyNow = Engine_getInstance().r9_1;
+      var keyNow = Engine_getInstance().s9_1;
       var inductionVariable_0 = 0;
       if (inductionVariable_0 < 15000)
         do {
           var i_0 = inductionVariable_0;
           inductionVariable_0 = inductionVariable_0 + 1 | 0;
-          Eng_getInstance().f9(keyNow, i_0, Engine_getInstance().q9_1, Eng_getInstance().a9_1);
+          Eng_getInstance().g9(keyNow, i_0, Engine_getInstance().r9_1, Eng_getInstance().b9_1);
           var j_0 = imul(i_0, 3);
-          Eng_getInstance().r8_1[j_0] = Eng_getInstance().a9_1[0];
-          Eng_getInstance().r8_1[j_0 + 1 | 0] = Eng_getInstance().a9_1[1];
-          Eng_getInstance().r8_1[j_0 + 2 | 0] = Eng_getInstance().a9_1[2];
+          Eng_getInstance().s8_1[j_0] = Eng_getInstance().b9_1[0];
+          Eng_getInstance().s8_1[j_0 + 1 | 0] = Eng_getInstance().b9_1[1];
+          Eng_getInstance().s8_1[j_0 + 2 | 0] = Eng_getInstance().b9_1[2];
         }
          while (inductionVariable_0 < 15000);
     }
     var ht = hueTarget();
     var tmp_0 = Engine_getInstance();
-    var tmp_1 = Engine_getInstance().w9_1;
-    var tmp_2 = ht - Engine_getInstance().w9_1;
+    var tmp_1 = Engine_getInstance().x9_1;
+    var tmp_2 = ht - Engine_getInstance().x9_1;
     // Inline function 'kotlin.math.min' call
     var b_2 = dt * 0.6;
-    tmp_0.w9_1 = tmp_1 + tmp_2 * Math.min(1.0, b_2);
+    tmp_0.x9_1 = tmp_1 + tmp_2 * Math.min(1.0, b_2);
     var tmp_3 = Engine_getInstance();
-    var tmp_4 = Engine_getInstance().x9_1;
+    var tmp_4 = Engine_getInstance().y9_1;
     // Inline function 'kotlin.math.exp' call
     var x_1 = -dt * 3.2;
-    tmp_3.x9_1 = tmp_4 * Math.exp(x_1);
-    bright = bright + Engine_getInstance().x9_1;
+    tmp_3.y9_1 = tmp_4 * Math.exp(x_1);
+    bright = bright + Engine_getInstance().y9_1;
     get_gl().clear(get_gl().COLOR_BUFFER_BIT);
-    get_gl().uniform1f(get_uTime(), Engine_getInstance().q9_1);
-    get_gl().uniform1f(get_uAz(), Engine_getInstance().s9_1);
-    get_gl().uniform1f(get_uEl(), Engine_getInstance().u9_1);
-    get_gl().uniform1f(get_uDist(), Engine_getInstance().t9_1 * get_distFactor());
+    get_gl().uniform1f(get_uTime(), Engine_getInstance().r9_1);
+    get_gl().uniform1f(get_uAz(), Engine_getInstance().t9_1);
+    get_gl().uniform1f(get_uEl(), Engine_getInstance().v9_1);
+    get_gl().uniform1f(get_uDist(), Engine_getInstance().u9_1 * get_distFactor());
     get_gl().bindBuffer(get_gl().ARRAY_BUFFER, get_starBuf());
     get_gl().vertexAttribPointer(get_APOS(), 3, get_gl().FLOAT, false, 0, 0);
     get_gl().bindBuffer(get_gl().ARRAY_BUFFER, get_starSeedBuf());
@@ -2310,7 +2319,7 @@
       do {
         var k = inductionVariable_1;
         inductionVariable_1 = inductionVariable_1 + 1 | 0;
-        get_posF32()[k] = Eng_getInstance().r8_1[k];
+        get_posF32()[k] = Eng_getInstance().s8_1[k];
       }
        while (inductionVariable_1 < 45000);
     get_gl().bindBuffer(get_gl().ARRAY_BUFFER, get_posBuf());
@@ -2318,12 +2327,12 @@
     get_gl().vertexAttribPointer(get_APOS(), 3, get_gl().FLOAT, false, 0, 0);
     get_gl().bindBuffer(get_gl().ARRAY_BUFFER, get_seedBuf());
     get_gl().vertexAttribPointer(get_ASEED(), 4, get_gl().FLOAT, false, 0, 0);
-    get_gl().uniform1f(get_uHue(), Engine_getInstance().w9_1);
+    get_gl().uniform1f(get_uHue(), Engine_getInstance().x9_1);
     get_gl().uniform1f(get_uSat(), 0.9);
     get_gl().uniform1f(get_uLight(), 0.6);
     get_gl().uniform1f(get_uBright(), bright);
     get_gl().uniform1f(get_uSize(), inCer ? 1.1 : 0.85);
-    get_gl().drawArrays(get_gl().POINTS, 0, Engine_getInstance().y9_1);
+    get_gl().drawArrays(get_gl().POINTS, 0, Engine_getInstance().z9_1);
   }
   function frame(nowMs) {
     _init_properties_web_kt__le8mgy();
@@ -2354,7 +2363,7 @@
       set_uiAcc(0.0);
       refreshUI();
     }
-    if (Engine_getInstance().q9_1 > 3.0) {
+    if (Engine_getInstance().r9_1 > 3.0) {
       E('intro').classList.add('gone');
     }
     win().requestAnimationFrame(frame$lambda);
@@ -2364,31 +2373,31 @@
     if (!initGl())
       return Unit_instance;
     var hadSave = loadGame();
-    Engine_getInstance().r9_1 = get_SHAPES().i(get_S().x7_1).n7_1;
-    if (Engine_getInstance().r9_1 === 'heart') {
-      Eng_getInstance().c9();
+    Engine_getInstance().s9_1 = get_SHAPES().i(get_S().y7_1).n7_1;
+    if (Engine_getInstance().s9_1 === 'heart') {
+      Eng_getInstance().d9();
     }
-    var cam0 = Engine_getInstance().fa(Engine_getInstance().r9_1);
-    Engine_getInstance().t9_1 = cam0.ca_1;
+    var cam0 = Engine_getInstance().ga(Engine_getInstance().s9_1);
     Engine_getInstance().u9_1 = cam0.da_1;
     Engine_getInstance().v9_1 = cam0.ea_1;
+    Engine_getInstance().w9_1 = cam0.fa_1;
     if (hadSave) {
       var tmp = win().Date.now();
-      var away = (((!(tmp == null) ? typeof tmp === 'number' : false) ? tmp : THROW_CCE()) - get_S().i8_1) / 1000.0;
+      var away = (((!(tmp == null) ? typeof tmp === 'number' : false) ? tmp : THROW_CCE()) - get_S().j8_1) / 1000.0;
       if (away > 60.0) {
-        var capH = get_S().b8_1 > 0 ? Bal_getInstance().d7_1[get_S().b8_1 - 1 | 0] : 0.5;
-        var eff = 0.5 * (get_S().x7_1 >= 9 ? 2.0 : 1.0);
+        var capH = get_S().c8_1 > 0 ? Bal_getInstance().d7_1[get_S().c8_1 - 1 | 0] : 0.5;
+        var eff = 0.5 * (get_S().y7_1 >= 9 ? 2.0 : 1.0);
         // Inline function 'kotlin.math.min' call
         var b = capH * 3600.0;
         var secs = Math.min(away, b);
-        if (secs > 0.0 && get_S().j8_1 > 0.0) {
-          var gain = get_S().j8_1 * secs * eff;
+        if (secs > 0.0 && get_S().k8_1 > 0.0) {
+          var gain = get_S().k8_1 * secs * eff;
           var _receiver__tnumb7 = get_S();
-          _receiver__tnumb7.r7_1 = _receiver__tnumb7.r7_1 + gain;
+          _receiver__tnumb7.s7_1 = _receiver__tnumb7.s7_1 + gain;
           var _receiver__tnumb7_0 = get_S();
-          _receiver__tnumb7_0.s7_1 = _receiver__tnumb7_0.s7_1 + gain;
+          _receiver__tnumb7_0.t7_1 = _receiver__tnumb7_0.t7_1 + gain;
           var _receiver__tnumb7_1 = get_S();
-          _receiver__tnumb7_1.t7_1 = _receiver__tnumb7_1.t7_1 + gain;
+          _receiver__tnumb7_1.u7_1 = _receiver__tnumb7_1.u7_1 + gain;
           win().setTimeout(main$lambda(gain), 900);
         }
       }
@@ -2398,11 +2407,11 @@
       do {
         var i = inductionVariable;
         inductionVariable = inductionVariable + 1 | 0;
-        Eng_getInstance().f9(Engine_getInstance().r9_1, i, 0.0, Eng_getInstance().a9_1);
+        Eng_getInstance().g9(Engine_getInstance().s9_1, i, 0.0, Eng_getInstance().b9_1);
         var j = imul(i, 3);
-        Eng_getInstance().r8_1[j] = Eng_getInstance().a9_1[0];
-        Eng_getInstance().r8_1[j + 1 | 0] = Eng_getInstance().a9_1[1];
-        Eng_getInstance().r8_1[j + 2 | 0] = Eng_getInstance().a9_1[2];
+        Eng_getInstance().s8_1[j] = Eng_getInstance().b9_1[0];
+        Eng_getInstance().s8_1[j + 1 | 0] = Eng_getInstance().b9_1[1];
+        Eng_getInstance().s8_1[j + 2 | 0] = Eng_getInstance().b9_1[2];
       }
        while (inductionVariable < 15000);
     var inductionVariable_0 = 0;
@@ -2410,7 +2419,7 @@
       do {
         var k = inductionVariable_0;
         inductionVariable_0 = inductionVariable_0 + 1 | 0;
-        get_posF32()[k] = Eng_getInstance().r8_1[k];
+        get_posF32()[k] = Eng_getInstance().s8_1[k];
       }
        while (inductionVariable_0 < 45000);
     E('introsub').textContent = '15,000 PARTICLES \xB7 A PARTICLE IDLE GAME \xB7 BUILT WITH KOTLIN';
@@ -2489,11 +2498,11 @@
   }
   function buildShopRows$lambda_0(r) {
     _init_properties_web_kt__le8mgy();
-    var lvl = get_S().z7_1;
+    var lvl = get_S().a8_1;
     var c = shopCost('ref', lvl);
-    r.sa_1.textContent = '\xD71.25 production / level' + (lvl > 0 ? ' \xB7 level ' + lvl : '');
-    r.qa_1.disabled = c < 0.0 || get_S().y7_1 < c;
-    r.ra_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
+    r.ta_1.textContent = '\xD71.25 production / level' + (lvl > 0 ? ' \xB7 level ' + lvl : '');
+    r.ra_1.disabled = c < 0.0 || get_S().z7_1 < c;
+    r.sa_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
     return Unit_instance;
   }
   function buildShopRows$lambda_1() {
@@ -2503,11 +2512,11 @@
   }
   function buildShopRows$lambda_2(r) {
     _init_properties_web_kt__le8mgy();
-    var lvl = get_S().a8_1;
+    var lvl = get_S().b8_1;
     var c = shopCost('head', lvl);
-    r.sa_1.textContent = '+25 starting particles / level' + (lvl > 0 ? ' \xB7 level ' + lvl : '');
-    r.qa_1.disabled = c < 0.0 || get_S().y7_1 < c;
-    r.ra_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
+    r.ta_1.textContent = '+25 starting particles / level' + (lvl > 0 ? ' \xB7 level ' + lvl : '');
+    r.ra_1.disabled = c < 0.0 || get_S().z7_1 < c;
+    r.sa_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
     return Unit_instance;
   }
   function buildShopRows$lambda_3() {
@@ -2517,12 +2526,12 @@
   }
   function buildShopRows$lambda_4(r) {
     _init_properties_web_kt__le8mgy();
-    var lvl = get_S().b8_1;
+    var lvl = get_S().c8_1;
     var c = shopCost('after', lvl);
     var cap = lvl > 0 ? Bal_getInstance().d7_1[lvl - 1 | 0] : 0.5;
-    r.sa_1.textContent = 'offline production cap: ' + (isInfinite(cap) ? '\u221E' : fmt(cap) + 'h');
-    r.qa_1.disabled = c < 0.0 || get_S().y7_1 < c;
-    r.ra_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
+    r.ta_1.textContent = 'offline production cap: ' + (isInfinite(cap) ? '\u221E' : fmt(cap) + 'h');
+    r.ra_1.disabled = c < 0.0 || get_S().z7_1 < c;
+    r.sa_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
     return Unit_instance;
   }
   function buildShopRows$lambda_5() {
@@ -2532,15 +2541,15 @@
   }
   function buildShopRows$lambda_6(r) {
     _init_properties_web_kt__le8mgy();
-    var lvl = get_S().c8_1;
+    var lvl = get_S().d8_1;
     var c = shopCost('mom', lvl);
     var tmp = Bal_getInstance().k7_1;
     // Inline function 'kotlin.math.min' call
     var b = Bal_getInstance().k7_1.length - 1 | 0;
     var cap = tmp[Math.min(lvl, b)];
-    r.sa_1.textContent = '+2%/min since gather, cap ' + fmtMult(cap) + (lvl > 0 ? ' \xB7 level ' + lvl : '');
-    r.qa_1.disabled = c < 0.0 || get_S().y7_1 < c;
-    r.ra_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
+    r.ta_1.textContent = '+2%/min since gather, cap ' + fmtMult(cap) + (lvl > 0 ? ' \xB7 level ' + lvl : '');
+    r.ra_1.disabled = c < 0.0 || get_S().z7_1 < c;
+    r.sa_1.textContent = c < 0.0 ? 'MAX' : '\u25C6 ' + fmt(c);
     return Unit_instance;
   }
   function buildShopRows$lambda_7() {
@@ -2550,9 +2559,9 @@
   }
   function buildShopRows$lambda_8(r) {
     _init_properties_web_kt__le8mgy();
-    r.sa_1.textContent = get_S().d8_1 ? 'ONLINE' : 'auto-buys particles when affordable';
-    r.qa_1.disabled = get_S().d8_1 || get_S().y7_1 < 25;
-    r.ra_1.textContent = get_S().d8_1 ? 'ACTIVE' : '\u25C6 25';
+    r.ta_1.textContent = get_S().e8_1 ? 'ONLINE' : 'auto-buys particles when affordable';
+    r.ra_1.disabled = get_S().e8_1 || get_S().z7_1 < 25;
+    r.sa_1.textContent = get_S().e8_1 ? 'ACTIVE' : '\u25C6 25';
     return Unit_instance;
   }
   function buildShopRows$lambda_9() {
@@ -2562,9 +2571,9 @@
   }
   function buildShopRows$lambda_10(r) {
     _init_properties_web_kt__le8mgy();
-    r.sa_1.textContent = get_S().e8_1 ? 'ONLINE' : 'auto-buys light levels when affordable';
-    r.qa_1.disabled = get_S().e8_1 || get_S().y7_1 < 75;
-    r.ra_1.textContent = get_S().e8_1 ? 'ACTIVE' : '\u25C6 75';
+    r.ta_1.textContent = get_S().f8_1 ? 'ONLINE' : 'auto-buys light levels when affordable';
+    r.ra_1.disabled = get_S().f8_1 || get_S().z7_1 < 75;
+    r.sa_1.textContent = get_S().f8_1 ? 'ACTIVE' : '\u25C6 75';
     return Unit_instance;
   }
   function buildShopRows$lambda_11() {
@@ -2574,9 +2583,9 @@
   }
   function buildShopRows$lambda_12(r) {
     _init_properties_web_kt__le8mgy();
-    r.sa_1.textContent = get_S().f8_1 ? 'ONLINE' : 'auto-buys spectrum bands when affordable';
-    r.qa_1.disabled = get_S().f8_1 || get_S().y7_1 < 225;
-    r.ra_1.textContent = get_S().f8_1 ? 'ACTIVE' : '\u25C6 225';
+    r.ta_1.textContent = get_S().g8_1 ? 'ONLINE' : 'auto-buys spectrum bands when affordable';
+    r.ra_1.disabled = get_S().g8_1 || get_S().z7_1 < 225;
+    r.sa_1.textContent = get_S().g8_1 ? 'ACTIVE' : '\u25C6 225';
     return Unit_instance;
   }
   function setupTabs$lambda($btn, $n, $btns) {
@@ -2632,7 +2641,7 @@
   }
   function main$lambda_3(_unused_var__etf5q3) {
     _init_properties_web_kt__le8mgy();
-    buyParticles(get_S(), maxParticlesAfford(get_S().u7_1, get_S().r7_1));
+    buyParticles(get_S(), maxParticlesAfford(get_S().v7_1, get_S().s7_1));
     refreshUI();
     saveGame();
     return Unit_instance;
@@ -2646,7 +2655,7 @@
   }
   function main$lambda_5(_unused_var__etf5q3) {
     _init_properties_web_kt__le8mgy();
-    buyLight(get_S(), maxLightAfford(get_S().v7_1, get_S().r7_1));
+    buyLight(get_S(), maxLightAfford(get_S().w7_1, get_S().s7_1));
     refreshUI();
     saveGame();
     return Unit_instance;
@@ -2662,9 +2671,9 @@
     if (win().confirm('Wipe your swarm? All shapes, prisms and light will be lost.') == true) {
       store().removeItem('flutterlight_kt_v1');
       set_S(new GameState());
-      Engine_getInstance().r9_1 = 'sphere';
-      Engine_getInstance().z9_1 = -1;
-      Blend_getInstance().g9_1 = false;
+      Engine_getInstance().s9_1 = 'sphere';
+      Engine_getInstance().aa_1 = -1;
+      Blend_getInstance().h9_1 = false;
       cerOff();
       toast('THE VOID RESETS');
       refreshUI();
@@ -2676,13 +2685,13 @@
     _init_properties_web_kt__le8mgy();
     if (canGather(get_S())) {
       var gained = doGather(get_S());
-      var sh = get_SHAPES().i(get_S().x7_1);
+      var sh = get_SHAPES().i(get_S().y7_1);
       if (sh.n7_1 === 'heart') {
-        Eng_getInstance().c9();
+        Eng_getInstance().d9();
       }
-      Engine_getInstance().aa_1 = sh.n7_1;
-      Engine_getInstance().z9_1 = 0;
-      Engine_getInstance().ba_1 = 0.0;
+      Engine_getInstance().ba_1 = sh.n7_1;
+      Engine_getInstance().aa_1 = 0;
+      Engine_getInstance().ca_1 = 0.0;
       cerOn(sh.o7_1, 'GATHERED \xB7 ' + fmtMult(sh.q7_1) + ' \u2014 ' + sh.p7_1);
       toast('+' + fmt(gained) + ' PRISMS');
       refreshUI();
@@ -2692,16 +2701,16 @@
   }
   function main$lambda_9(_unused_var__etf5q3) {
     _init_properties_web_kt__le8mgy();
-    var inc = incomeOf(get_S(), get_S().g8_1);
+    var inc = incomeOf(get_S(), get_S().h8_1);
     // Inline function 'kotlin.math.max' call
     var gain = Math.max(10.0, inc);
     var _receiver__tnumb7 = get_S();
-    _receiver__tnumb7.r7_1 = _receiver__tnumb7.r7_1 + gain;
+    _receiver__tnumb7.s7_1 = _receiver__tnumb7.s7_1 + gain;
     var _receiver__tnumb7_0 = get_S();
-    _receiver__tnumb7_0.s7_1 = _receiver__tnumb7_0.s7_1 + gain;
+    _receiver__tnumb7_0.t7_1 = _receiver__tnumb7_0.t7_1 + gain;
     var _receiver__tnumb7_1 = get_S();
-    _receiver__tnumb7_1.t7_1 = _receiver__tnumb7_1.t7_1 + gain;
-    Engine_getInstance().x9_1 = 0.8;
+    _receiver__tnumb7_1.u7_1 = _receiver__tnumb7_1.u7_1 + gain;
+    Engine_getInstance().y9_1 = 0.8;
     return Unit_instance;
   }
   function main$lambda_10(_unused_var__etf5q3) {
