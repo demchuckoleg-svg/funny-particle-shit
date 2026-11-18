@@ -26,11 +26,13 @@ jobs:
       - name: Build playable game (Kotlin/JS)
         run: gradle --no-daemon :shared:jsBrowserProductionWebpack
 
-      - name: Compile and run balance simulation (Kotlin/JVM)
+      - name: Compile and run balance simulation (Kotlin/JVM, in-process compiler)
         run: |
-          curl -sL -o kotlinc.zip https://github.com/JetBrains/kotlin/releases/download/v2.1.20/kotlin-compiler-2.1.20.zip
+          curl -fL --retry 3 --max-time 240 -o kotlinc.zip https://github.com/JetBrains/kotlin/releases/download/v2.1.20/kotlin-compiler-2.1.20.zip
           unzip -q kotlinc.zip
-          kotlinc/bin/kotlinc shared/src/commonMain/kotlin/lumen/logic.kt shared/src/jvmMain/kotlin/lumen/sim.kt -include-runtime -d sim.jar
+          java -cp kotlinc/lib/kotlin-compiler.jar org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
+            shared/src/commonMain/kotlin/lumen/logic.kt shared/src/jvmMain/kotlin/lumen/sim.kt \
+            -include-runtime -d sim.jar
           java -jar sim.jar
 
       - name: Stage web bundle
