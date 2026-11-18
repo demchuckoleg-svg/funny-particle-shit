@@ -193,13 +193,18 @@ fun reqFor(S: GameState): Double {
     return base * prismMult(S.ref) * SHAPES[nextK].reqMult
 }
 
-/* exact integer floor cube root (pow alone can miss exact cubes) */
+/* exact integer floor cube root, clamped to an Int-safe ceiling
+   (pow alone can miss exact cubes; unclamped roots overflow Int and
+   the fixup loops would spin through the whole int range) */
+const val PRISM_CAP = 2_000_000_000
+
 fun intCubeRoot(v: Double): Int {
     if (v < 1.0) return 0
     var k = v.pow(1.0 / 3.0).toInt()
     if (k < 1) k = 1
+    if (k > PRISM_CAP) k = PRISM_CAP
     while (k > 1 && k.toDouble() * k * k > v) k--
-    while ((k + 1).toDouble() * (k + 1) * (k + 1) <= v) k++
+    while (k < PRISM_CAP && (k + 1).toDouble() * (k + 1) * (k + 1) <= v) k++
     return k
 }
 
@@ -260,7 +265,7 @@ fun canGather(S: GameState): Boolean = S.runEarned >= reqFor(S)
 fun doGather(S: GameState): Int {
     if (!canGather(S)) return -1
     val gained = prismsFor(S.runEarned)
-    S.prisms += gained
+    S.prisms = if (S.prisms > PRISM_CAP - gained) PRISM_CAP else S.prisms + gained
     val wasComplete = S.shapes >= SHAPES.size - 1
     if (!wasComplete) S.shapes++
     S.totalGathers++
