@@ -32,10 +32,12 @@ object Bal {
     const val bandMaxLvl = 5
     const val prismsDiv = 1e4
     const val reqBase = 3e4
-    /* requirement exponent: the bot's equilibrium income grows ~mult^1.39
-       (density x efficiency compounding), so the next shape's requirement
-       must scale as mult^reqExp to keep every gather a similar effort */
-    const val reqExp = 1.4
+    /* requirement exponents: equilibrium income grows ~mult^1.55 when the
+       density x efficiency ramp and the prism-shop stack are included, and
+       the persistent refraction stack contributes ~prismMult^0.4 — matching
+       those powers keeps gather effort uniform across the whole arc */
+    const val reqExp = 1.55
+    const val reqPrismExp = 0.4
     const val refBase = 5
     const val refGain = 1.25
     const val refMax = 60
@@ -68,15 +70,15 @@ val SHAPES = listOf(
     Shape("sphere", "FORMLESS SPHERE", "zero corners · pure potential", 1.0),
     Shape("tri", "TRIANGLE", "3 corners · STABILITY", 3.0),
     Shape("square", "SQUARE", "4 corners · FOUNDATION", 5.0),
-    Shape("pent", "PENTAGON", "5 corners · the golden ratio lives here", 8.0, 4.0),
-    Shape("hex", "HEXAGON", "6 corners · nature's lattice", 13.0, 12.0),
-    Shape("star", "STAR", "10 corners · RADIANCE", 25.0, 30.0),
-    Shape("heart", "HEART", "abstract: the cusp · PULSE", 50.0, 56.0),
-    Shape("galaxy", "SPIRAL GALAXY", "abstract: angular momentum", 120.0, 85.0),
-    Shape("mobius", "MÖBIUS BAND", "abstract: one side · offline gains ×2", 350.0, 85.0),
-    Shape("klein", "KLEIN BOTTLE", "abstract: contained infinity", 1000.0, 115.0),
-    Shape("knot", "TORUS KNOT", "abstract: knottedness · BINDING", 4000.0, 115.0),
-    Shape("tesseract", "TESSERACT", "abstract: the fourth dimension", 20000.0, 115.0),
+    Shape("pent", "PENTAGON", "5 corners · the golden ratio lives here", 8.0, 1.0),
+    Shape("hex", "HEXAGON", "6 corners · nature's lattice", 13.0, 2.0),
+    Shape("star", "STAR", "10 corners · RADIANCE", 25.0, 4.0),
+    Shape("heart", "HEART", "abstract: the cusp · PULSE", 50.0, 8.0),
+    Shape("galaxy", "SPIRAL GALAXY", "abstract: angular momentum", 120.0, 12.0),
+    Shape("mobius", "MÖBIUS BAND", "abstract: one side · offline gains ×2", 350.0, 16.0),
+    Shape("klein", "KLEIN BOTTLE", "abstract: contained infinity", 1000.0, 24.0),
+    Shape("knot", "TORUS KNOT", "abstract: knottedness · BINDING", 4000.0, 32.0),
+    Shape("tesseract", "TESSERACT", "abstract: the fourth dimension", 20000.0, 48.0),
 )
 
 class GameState {
@@ -190,7 +192,7 @@ fun reqFor(S: GameState): Double {
     } else {
         Bal.reqBase * shapeMult(S.shapes).pow(Bal.reqExp)
     }
-    return base * prismMult(S.ref) * SHAPES[nextK].reqMult
+    return base * prismMult(S.ref).pow(Bal.reqPrismExp) * SHAPES[nextK].reqMult
 }
 
 /* exact integer floor cube root, clamped to an Int-safe ceiling
