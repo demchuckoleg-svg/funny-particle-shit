@@ -31,7 +31,11 @@ object Bal {
     const val bandGain = 1.10
     const val bandMaxLvl = 5
     const val prismsDiv = 1e4
-    const val reqBase = 2e4
+    const val reqBase = 3e4
+    /* requirement exponent: the bot's equilibrium income grows ~mult^1.39
+       (density x efficiency compounding), so the next shape's requirement
+       must scale as mult^reqExp to keep every gather a similar effort */
+    const val reqExp = 1.4
     const val refBase = 5
     const val refGain = 1.25
     const val refMax = 60
@@ -165,14 +169,14 @@ fun incomeOf(S: GameState, tNow: Double): Double =
         prismMult(S.ref) *
         momentumMult(S, tNow)
 
-/* requirement to unlock the NEXT shape = reqBase * product of owned shape bonuses */
+/* requirement to unlock the NEXT shape = reqBase * product(owned shape bonuses)^reqExp */
 fun reqFor(shapesOwned: Int): Double {
     val last = SHAPES.size - 1
     return if (shapesOwned >= last) {
         val over = shapesOwned - last + 1
-        Bal.reqBase * shapeMult(last) * 10.0.pow(over)
+        Bal.reqBase * shapeMult(last).pow(Bal.reqExp) * 10.0.pow(over)
     } else {
-        Bal.reqBase * shapeMult(shapesOwned)
+        Bal.reqBase * shapeMult(shapesOwned).pow(Bal.reqExp)
     }
 }
 

@@ -32,9 +32,24 @@ jobs:
 
       - name: Stage web bundle
         run: |
+          set -x
           mkdir -p deploy
           cp web/index.html deploy/
-          cp shared/build/dist/js/productionExecutable/*.js deploy/
+          BUNDLE=""
+          for p in \
+            shared/build/dist/js/productionExecutable/*.js \
+            shared/build/compileSync/js/main/productionExecutable/kotlin/*.js \
+            shared/build/compileSync/js/productionExecutable/kotlin/*.js
+          do
+            if [ -f "$p" ]; then BUNDLE="$p"; break; fi
+          done
+          if [ -z "$BUNDLE" ]; then
+            find shared/build -type f -name "*.js" -not -name "*.map" | head -40
+            echo "no bundle found"; exit 1
+          fi
+          echo "BUNDLE=$BUNDLE"
+          cp "$BUNDLE" deploy/shared.js
+          ls -la deploy/
 
       - name: Upload web bundle artifact
         uses: actions/upload-artifact@v4
