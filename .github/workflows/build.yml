@@ -29,21 +29,15 @@ jobs:
       - name: Compile and run balance simulation (Kotlin/JVM)
         run: |
           set -x
-          mkdir -p kdist/lib
-          curl -fL --retry 3 --max-time 180 -o kdist/lib/kotlin-compiler.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-compiler/2.1.20/kotlin-compiler-2.1.20.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/kotlin-stdlib.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.1.20/kotlin-stdlib-2.1.20.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/kotlin-reflect.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-reflect/2.1.20/kotlin-reflect-2.1.20.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/kotlinx-coroutines-core-jvm.jar https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.0/kotlinx-coroutines-core-jvm-1.8.0.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/kotlin-script-runtime.jar https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-script-runtime/2.1.20/kotlin-script-runtime-2.1.20.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/trove4j.jar https://repo1.maven.org/maven2/org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar
-          curl -fL --retry 3 --max-time 120 -o kdist/lib/annotations.jar https://repo1.maven.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar
-          ls -la kdist/lib
-          java -Xmx2g -cp "kdist/lib/kotlin-compiler.jar:kdist/lib/kotlin-stdlib.jar:kdist/lib/kotlin-reflect.jar:kdist/lib/kotlinx-coroutines-core-jvm.jar:kdist/lib/kotlin-script-runtime.jar:kdist/lib/trove4j.jar:kdist/lib/annotations.jar" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
-            -kotlin-home kdist \
-            shared/src/commonMain/kotlin/lumen/logic.kt shared/src/jvmMain/kotlin/lumen/sim.kt \
-            -include-runtime -d sim.jar
-          ls -la sim.jar
-          java -jar sim.jar
+          if gradle --no-daemon :shared:run; then
+            echo "sim ran via gradle :shared:run"
+          else
+            echo "gradle run unavailable; falling back to compile + direct java"
+            gradle --no-daemon :shared:compileKotlinJvm
+            STDLIB=$(find "$HOME/.gradle" -name "kotlin-stdlib-2.1.20.jar" | head -n 1)
+            echo "stdlib: $STDLIB"
+            java -cp "shared/build/classes/kotlin/jvm/main:$STDLIB" lumen.SimKt
+          fi
 
       - name: Stage web bundle
         run: |
